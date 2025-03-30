@@ -32,13 +32,14 @@ pipeline {
             }
         }
 
-        stage('Ejecutar Pruebas') {
-            steps {
-                echo "Ejecutando pruebas"
-                // Ajusta el comando de pruebas según la configuración de tu proyecto
-                sh 'npm test'
-            }
-        }
+        // No hay pruebas automatizadas en este caso, pero puedes descomentar y ajustar el siguiente bloque si es necesario
+        // stage('Ejecutar Pruebas') {
+        //     steps {
+        //         echo "Ejecutando pruebas"
+        //         // Ajusta el comando de pruebas según la configuración de tu proyecto
+        //         sh 'npm test'
+        //     }
+        // }
 
         stage('Construir Imagen Docker') {
             steps {
