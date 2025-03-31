@@ -1,5 +1,5 @@
 # Etapa 1: Construcción de la aplicación
-FROM node:16-alpine as builder
+FROM node:22-alpine as builder
 
 # Directorio de trabajo
 WORKDIR /app
