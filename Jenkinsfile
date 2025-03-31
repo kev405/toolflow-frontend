@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // Variables de entorno para la aplicación, Docker y SSH
+        // Variables de entorno para la aplicación, Docker y SSH prueba webhook
         APP_NAME = "toolflow-frontend"
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
         DOCKER_IMAGE = "kev405/toolflow-frontend"
