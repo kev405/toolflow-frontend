@@ -57,6 +57,15 @@ export const useAuth = (): UseAuthHook => {
     localStorage.removeItem('userData');
   }, []);
 
+  // Memorizar validateToken
+  const validateToken = useCallback(async (token: string): Promise<boolean> => {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(!!token);
+      }, 500);
+    });
+  }, []);
+
   // Validar token al cargar la app
   useEffect(() => {
     const initializeAuth = async () => {
@@ -66,7 +75,6 @@ export const useAuth = (): UseAuthHook => {
       if (token && userData) {
         try {
           const isValid = await validateToken(token);
-          console.log("🚀 ~ initializeAuth ~ isValid:", isValid)
           
           if (isValid) {
             setAuthState({
@@ -78,6 +86,7 @@ export const useAuth = (): UseAuthHook => {
           }
         } catch (error) {
           console.error('Error validating token:', error);
+          clearAuth();
         }
       }
 
@@ -85,22 +94,11 @@ export const useAuth = (): UseAuthHook => {
     };
 
     initializeAuth();
-  }, []);
+  }, [validateToken, clearAuth]); // Añadir dependencias
 
-  // Función para validar token (simulada)
-  const validateToken = async (token: string): Promise<boolean> => {
-    // Aquí iría la validación real con tu backend
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(!!token);
-      }, 500);
-    });
-  };
-
-  // Función de login
-  const login = async (credentials: AuthCredentials): Promise<AuthResponse> => {
+  // Memorizar login
+  const login = useCallback(async (credentials: AuthCredentials): Promise<AuthResponse> => {
     try {
-      // Simulación de API call - reemplazar con tu implementación real
       const response = await mockLoginApi(credentials);
       
       if (response.success && response.token && response.user) {
@@ -122,7 +120,9 @@ export const useAuth = (): UseAuthHook => {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
-  };
+  }, [navigate, persistAuth]);
+
+  
 
   // Función de logout
   const logout = (): void => {
