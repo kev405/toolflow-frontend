@@ -3,7 +3,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useState } from 'react';
 
 export const LoginForm = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,10 +18,14 @@ export const LoginForm = () => {
     setError('');
 
     try {
-      await login({ email, password });
+      const result = await login({ username, password });
+      if (!result.success) {
+        setError(result.error || 'Credenciales inválidas');
+        return;
+      }
       navigate('/');
     } catch (err) {
-      setError('Credenciales inválidas. Por favor intente nuevamente.');
+      setError('Error de conexión. Por favor intente nuevamente.');
       console.error('Error de inicio de sesión:', err);
     } finally {
       setIsLoading(false);
@@ -43,13 +47,14 @@ export const LoginForm = () => {
       <form className="user" onSubmit={handleSubmit}>
         <div className="form-group">
           <input
-            type="email"
+            type="text"
             className="form-control form-control-user"
-            id="email"
-            aria-describedby="emailHelp"
-            placeholder="Ingrese su correo electrónico..."
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            id="username"
+            aria-describedby="usernameHelp"
+            placeholder="Usuario"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
             required
           />
         </div>
@@ -61,6 +66,7 @@ export const LoginForm = () => {
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
         </div>
@@ -90,19 +96,6 @@ export const LoginForm = () => {
           )}
         </button>
       </form>
-      
-      {/* <LoginFooter /> */}
     </div>
   );
 };
-
-const LoginFooter = () => (
-  <>
-    <hr />
-    <div className="text-center">
-      <a className="small" href="/forgot-password">
-        ¿Olvidó su contraseña?
-      </a>
-    </div>
-  </>
-);

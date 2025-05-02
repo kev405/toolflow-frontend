@@ -1,16 +1,16 @@
+import { jwtDecode } from 'jwt-decode';
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, NavigateFunction } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-// Tipos de TypeScript
 interface User {
   id: number;
+  username: string;
   name: string;
-  email: string;
   role: string;
 }
 
 interface AuthCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -35,7 +35,13 @@ interface AuthActions {
 
 type UseAuthHook = AuthState & AuthActions;
 
-// Implementación del hook
+// Configuración de endpoints
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
+const AUTH_ENDPOINTS = {
+  authenticate: `${API_BASE_URL}/auth/authenticate`,
+  validateToken: `${API_BASE_URL}/auth/validate-token`
+};
+
 export const useAuth = (): UseAuthHook => {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -43,89 +49,138 @@ export const useAuth = (): UseAuthHook => {
     loading: true
   });
 
-  const navigate: NavigateFunction = useNavigate();
+  const navigate = useNavigate();
 
-  // Función para guardar la sesión en localStorage
-  const persistAuth = useCallback((token: string, user: User): void => {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userData', JSON.stringify(user));
+  const getUserFromToken = useCallback((token: string): User | null => {
+    try {
+      const decoded: any = jwtDecode(token);
+      console.log("🚀 ~ getUserFromToken ~ decoded:", decoded)
+      return {
+        id: decoded.userId || decoded.sub,
+        username: decoded.username || decoded.sub,
+        name: decoded.name || '',
+        role: decoded.role || 'user'
+      };
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
   }, []);
-
-  // Función para limpiar la sesión
+  
   const clearAuth = useCallback((): void => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
   }, []);
-
-  // Memorizar validateToken
+  
   const validateToken = useCallback(async (token: string): Promise<boolean> => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve(!!token);
-      }, 500);
-    });
-  }, []);
+    if (!token) return false;
+  
+    try {
+      const decoded: any = jwtDecode(token);
+      if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+        return false;
+      }
+      
+      const response = await fetch(`${AUTH_ENDPOINTS.validateToken}?jwt=${encodeURIComponent(token)}`, {
+        method: 'GET',
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Error validating token:', error);
+      return false;
+    }
+  }, []); // Ensure stable reference with empty dependency array
 
-  // Validar token al cargar la app
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('authToken');
+      console.log("🚀 ~ initializeAuth ~ token:", token)
       const userData = localStorage.getItem('userData');
-
-      if (token && userData) {
+  
+      if (token) {
         try {
           const isValid = await validateToken(token);
-          
+          console.log("🚀 ~ initializeAuth ~ isValid:", isValid)
+  
           if (isValid) {
+            const user = userData ? JSON.parse(userData) : getUserFromToken(token);
             setAuthState({
               isAuthenticated: true,
-              user: JSON.parse(userData),
+              user,
               loading: false
             });
             return;
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          clearAuth();
         }
+        clearAuth();
       }
-
-      setAuthState(prev => ({ ...prev, loading: false }));
+  
+      setAuthState((prev) => ({ ...prev, loading: false }));
     };
-
+  
     initializeAuth();
-  }, [validateToken, clearAuth]); // Añadir dependencias
+  }, []); // Ensure dependencies are stable
 
-  // Memorizar login
   const login = useCallback(async (credentials: AuthCredentials): Promise<AuthResponse> => {
     try {
-      const response = await mockLoginApi(credentials);
-      
-      if (response.success && response.token && response.user) {
-        persistAuth(response.token, response.user);
-        
+      const response = await fetch(AUTH_ENDPOINTS.authenticate, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || 'Authentication failed'
+        };
+      }
+
+      if (data.jwt) {
+        localStorage.setItem('authToken', data.jwt);
+        const user = getUserFromToken(data.jwt);
+        if (!user) {
+          return {
+            success: false,
+            error: 'Invalid token structure'
+          };
+        }
+
         setAuthState({
           isAuthenticated: true,
-          user: response.user,
+          user,
           loading: false
         });
 
-        navigate('/tools');
+        navigate('/');
+        
+        return {
+          success: true,
+          token: data.jwt,
+          user
+        };
       }
-      
-      return response;
+
+      return {
+        success: false,
+        error: 'No token received'
+      };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Network error'
       };
     }
-  }, [navigate, persistAuth]);
+  }, [navigate, getUserFromToken]);
 
-  
-
-  // Función de logout
-  const logout = (): void => {
+  const logout = useCallback((): void => {
     clearAuth();
     setAuthState({
       isAuthenticated: false,
@@ -133,32 +188,7 @@ export const useAuth = (): UseAuthHook => {
       loading: false
     });
     navigate('/login');
-  };
-
-  // Mock API (reemplazar con tu implementación real)
-  const mockLoginApi = async (credentials: AuthCredentials): Promise<AuthResponse> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (credentials.email === 'admin@example.com' && credentials.password === '123456') {
-          resolve({
-            success: true,
-            token: 'fake-jwt-token',
-            user: {
-              id: 1,
-              name: 'Admin',
-              email: 'admin@example.com',
-              role: 'admin'
-            }
-          });
-        } else {
-          resolve({
-            success: false,
-            error: 'Credenciales inválidas'
-          });
-        }
-      }, 1000);
-    });
-  };
+  }, [clearAuth, navigate]);
 
   return {
     ...authState,
