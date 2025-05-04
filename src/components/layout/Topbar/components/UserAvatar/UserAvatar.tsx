@@ -8,8 +8,8 @@ interface UserAvatarProps {
   };
 }
 
-export const UserAvatar = ({ 
-  user = { name: 'Usuario', avatar: 'https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg' } 
+export const UserAvatar = ({
+  user = { name: 'Usuario', avatar: 'https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg' }
 }: UserAvatarProps) => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -30,34 +30,41 @@ export const UserAvatar = ({
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate('/perfil');
+    navigate('/profile');
     setUserMenuOpen(false);
+  };
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+    navigate('/login');
   };
 
   return (
     <li className={`nav-item dropdown no-arrow ${userMenuOpen ? 'show' : ''}`}>
-      <a 
-        className="nav-link dropdown-toggle" 
-        href="#" 
+      <a
+        className="nav-link dropdown-toggle"
+        href="#"
         role="button"
         onClick={toggleUserMenu}
       >
         <span className="mr-2 d-none d-lg-inline text-gray-600 small">{user.name}</span>
-        <img 
-          className="img-profile rounded-circle" 
-          src={user.avatar} 
+        <img
+          className="img-profile rounded-circle"
+          src={user.avatar}
           alt="Usuario"
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg';
           }}
         />
       </a>
-      <div 
+      <div
         ref={userMenuRef}
         className={`dropdown-menu dropdown-menu-right shadow animated--grow-in ${userMenuOpen ? 'show' : ''}`}
       >
-        <a 
-          className="dropdown-item" 
+        <a
+          className="dropdown-item"
           href="#"
           onClick={handleProfileClick}
         >
@@ -65,7 +72,11 @@ export const UserAvatar = ({
           Perfil
         </a>
         <div className="dropdown-divider"></div>
-        <a className="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+        <a
+          className="dropdown-item"
+          href="#"
+          onClick={handleLogout} // Llama a la función handleLogout
+        >
           <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
           Cerrar sesión
         </a>

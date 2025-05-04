@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Table, Space, Button, Dropdown, Tag } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
-// En las importaciones, agregar:
 import { EditOutlined, DeleteOutlined, SyncOutlined, PlusOutlined } from '@ant-design/icons'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
 
 interface UserType {
   key: string
@@ -17,7 +18,103 @@ interface UserType {
   estado: string
 }
 
+const fetchUsers = async (page: number, size: number, sortField: string, sortOrder: string) => {
+  try {
+    const token = localStorage.getItem('authToken');
+
+    const response = await fetch(`${API_BASE_URL}/users?page=${page}&size=${size}&sortField=${sortField}&sortOrder=${sortOrder}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al obtener usuarios');
+    }
+
+    return {
+      success: true,
+      data: data.content,
+      total: data.totalElements
+    };
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error de red'
+    };
+  }
+};
+
 const UsersPage = () => {
+  const [data, setData] = useState<UserType[]>([])
+  const [loading, setLoading] = useState(false);
+  const [tableParams, setTableParams] = useState({
+    pagination: {
+      current: 1,
+      pageSize: 10,
+      total: 0
+    },
+    sortField: 'name',
+    sortOrder: 'asc'
+  });
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const result = await fetchUsers(
+        tableParams.pagination.current - 1,
+        tableParams.pagination.pageSize,
+        tableParams.sortField,
+        tableParams.sortOrder
+      );
+
+      if (result.success && result.data) {
+        const formattedUsers = result.data.map((user: any) => ({
+          key: user.id.toString(),
+          id: user.id,
+          username: user.username,
+          nombre: user.name,
+          apellido: user.lastName,
+          email: user.email,
+          telefono: user.phone,
+          rol: user.role,
+          estado: user.status ? 'Activo' : 'Inactivo'
+        }));
+
+        setData(formattedUsers);
+        setTableParams({
+          ...tableParams,
+          pagination: {
+            ...tableParams.pagination,
+            total: result.total
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    loadUsers();
+  }, [JSON.stringify(tableParams)]);
+
+  const handleTableChange = (pagination: any, filters: any, sorter: any) => {
+    setTableParams({
+      pagination,
+      sortField: sorter.field || 'name',
+      sortOrder: sorter.order ? sorter.order.replace('end', '') : 'asc'
+    })
+  }
+
   const handleEdit = (record: UserType) => {
     console.log('Editar:', record)
   }
@@ -109,7 +206,7 @@ const UsersPage = () => {
     },
   ]
 
-  const data: UserType[] = [
+  const dataEx: UserType[] = [
     {
       key: '1',
       id: 1,
@@ -337,8 +434,8 @@ const UsersPage = () => {
       <h1 className='h3 mb-3 text-gray-800'>Usuarios</h1>
       <div className='row mb-3'>
         <div className='col-12 d-flex justify-content-end'>
-          <Button 
-            style={{ backgroundColor: '#26B857', borderColor:'#26B857' }} 
+          <Button
+            style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
             type="primary"
             icon={<PlusOutlined />}
           >
@@ -349,21 +446,9 @@ const UsersPage = () => {
       <Table
         columns={columns}
         dataSource={data}
-        pagination={{
-          total: data.length,
-          pageSize: 20,
-          showSizeChanger: true,
-          showQuickJumper: false,
-          locale: {
-            items_per_page: '/ Página',
-            jump_to: 'Ir a',
-            page: 'Página',
-            prev_page: 'Página anterior',
-            next_page: 'Página siguiente',
-            prev_5: '5 páginas anteriores',
-            next_5: '5 páginas siguientes'
-          }
-        }}
+        pagination={tableParams.pagination}
+        loading={loading}
+        onChange={handleTableChange}
       />
     </div>
   )
