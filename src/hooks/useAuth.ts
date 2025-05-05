@@ -1,6 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: number;
@@ -35,7 +34,6 @@ interface AuthActions {
 
 type UseAuthHook = AuthState & AuthActions;
 
-// Configuración de endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
 const AUTH_ENDPOINTS = {
   authenticate: `${API_BASE_URL}/auth/authenticate`,
@@ -49,12 +47,9 @@ export const useAuth = (): UseAuthHook => {
     loading: true
   });
 
-  const navigate = useNavigate();
-
   const getUserFromToken = useCallback((token: string): User | null => {
     try {
       const decoded: any = jwtDecode(token);
-      console.log("🚀 ~ getUserFromToken ~ decoded:", decoded)
       return {
         id: decoded.userId || decoded.sub,
         username: decoded.username || decoded.sub,
@@ -95,14 +90,12 @@ export const useAuth = (): UseAuthHook => {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('authToken');
-      console.log("🚀 ~ initializeAuth ~ token:", token)
       const userData = localStorage.getItem('userData');
   
       if (token) {
         try {
           const isValid = await validateToken(token);
-          console.log("🚀 ~ initializeAuth ~ isValid:", isValid)
-  
+          
           if (isValid) {
             const user = userData ? JSON.parse(userData) : getUserFromToken(token);
             setAuthState({
@@ -146,6 +139,7 @@ export const useAuth = (): UseAuthHook => {
       if (data.jwt) {
         localStorage.setItem('authToken', data.jwt);
         const user = getUserFromToken(data.jwt);
+        
         if (!user) {
           return {
             success: false,
@@ -159,8 +153,6 @@ export const useAuth = (): UseAuthHook => {
           loading: false
         });
 
-        navigate('/');
-        
         return {
           success: true,
           token: data.jwt,
@@ -178,7 +170,7 @@ export const useAuth = (): UseAuthHook => {
         error: error instanceof Error ? error.message : 'Network error'
       };
     }
-  }, [navigate, getUserFromToken]);
+  }, [getUserFromToken]);
 
   const logout = useCallback((): void => {
     clearAuth();
@@ -187,8 +179,7 @@ export const useAuth = (): UseAuthHook => {
       user: null,
       loading: false
     });
-    navigate('/login');
-  }, [clearAuth, navigate]);
+  }, [clearAuth]);
 
   return {
     ...authState,
