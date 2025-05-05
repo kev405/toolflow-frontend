@@ -47,7 +47,7 @@ export const UserAvatar = () => {
         </span>
         <img
           className="img-profile rounded-circle"
-          src={user?.avatar || 'https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg'}
+          src={'https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg'}
           alt={user?.name || 'Usuario'}
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg';

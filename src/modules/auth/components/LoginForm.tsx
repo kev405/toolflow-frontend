@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
@@ -12,6 +12,16 @@ export const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+    if (savedUsername && savedPassword) {
+      setUsername(savedUsername);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -22,6 +32,13 @@ export const LoginForm = () => {
       if (!result.success) {
         setError(result.error || 'Credenciales inválidas');
         return;
+      }
+      if (rememberMe) {
+        localStorage.setItem('rememberedUsername', username);
+        localStorage.setItem('rememberedPassword', password);
+      } else {
+        localStorage.removeItem('rememberedUsername');
+        localStorage.removeItem('rememberedPassword');
       }
       navigate('/');
     } catch (err) {
