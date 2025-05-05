@@ -85,7 +85,7 @@ export const useAuth = (): UseAuthHook => {
       console.error('Error validating token:', error);
       return false;
     }
-  }, []); // Ensure stable reference with empty dependency array
+  }, []);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -95,7 +95,7 @@ export const useAuth = (): UseAuthHook => {
       if (token) {
         try {
           const isValid = await validateToken(token);
-          
+
           if (isValid) {
             const user = userData ? JSON.parse(userData) : getUserFromToken(token);
             setAuthState({
