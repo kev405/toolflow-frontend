@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import './sidebar.css';
 
 interface SidebarProps {
@@ -37,15 +37,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   overlayClick,
 }) => {
   const [mobileView, setMobileView] = useState(window.innerWidth < 768);
-  const location = useLocation();
 
   const handleResize = useCallback(() => {
     const isMobile = window.innerWidth < 768;
     setMobileView(isMobile);
-    if (isMobile && !isCollapsed && onToggle) {
+  }, []);
+
+  const handleOverlayClick = useCallback(() => {
+    if (onToggle) {
       onToggle();
     }
-  }, [isCollapsed, onToggle]);
+  }, [onToggle]);
 
   useEffect(() => {
     handleResize();
@@ -64,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {showOverlay && (
         <div 
           className="sidebar-overlay"
-          onClick={overlayClick || onToggle}
+          onClick={overlayClick || handleOverlayClick}
           style={{
             position: 'fixed',
             top: 0,

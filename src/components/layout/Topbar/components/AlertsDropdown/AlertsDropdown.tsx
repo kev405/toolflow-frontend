@@ -48,8 +48,8 @@ export const AlertsDropdown = ({ alerts = [] }: AlertsDropdownProps) => {
         <h6 className="dropdown-header">
           Centro de Alertas
         </h6>
-        {alerts.map((alert, index) => (
-          <a key={index} className="dropdown-item d-flex align-items-center" href="#">
+        {alerts.map((alert) => (
+          <a key={alert.id} className="dropdown-item d-flex align-items-center" href="#">
             <div className="mr-3">
               <div className={`icon-circle bg-${alert.iconBg}`}>
                 <i className={`fas fa-${alert.icon} text-white`}></i>
