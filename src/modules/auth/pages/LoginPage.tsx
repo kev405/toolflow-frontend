@@ -1,3 +1,4 @@
+import React from 'react';
 import { LoginForm } from '../components/LoginForm';
 import loginBg from '../assets/logo-code-flow.png';
 
@@ -15,6 +16,7 @@ const LoginPage = () => {
                   <div className="col-lg-6 d-none d-lg-block p-0"> {/* Añade p-0 */}
                     <div 
                       className="h-100" 
+                      data-testid="login-image"
                       style={{
                         backgroundImage: `url(${loginBg})`,
                         backgroundSize: 'cover',
