@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
-import './sidebar.css';
+import './Sidebar.css';
 
 interface SidebarProps {
   brandName?: string;
