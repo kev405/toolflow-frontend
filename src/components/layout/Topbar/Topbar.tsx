@@ -2,8 +2,12 @@ import { SearchBar } from '../Topbar/components/SearchBar';
 import { AlertsDropdown } from '../Topbar/components/AlertsDropdown';
 import { UserAvatar } from '../Topbar/components/UserAvatar';
 
-interface TopbarProps {
-  onMenuToggle?: () => void;
+export interface TopbarProps {
+  onMenuToggle: () => void;
+  user: {
+    name: string;
+    avatar: string;
+  };
 }
 
 export const Topbar = ({ onMenuToggle }: TopbarProps) => {
