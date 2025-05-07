@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Space, Button, Dropdown, Tag } from 'antd'
+import { Table, Space, Button, Dropdown, Tag, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { EditOutlined, DeleteOutlined, SyncOutlined, PlusOutlined } from '@ant-design/icons'
 import { UserFormModal } from '../components/userFormModal/UserFormModal'
+import { API_BASE_URL } from '../../../config'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
 
 interface UserType {
   key: string
@@ -120,13 +120,60 @@ const UsersPage = () => {
   }
 
 
-  const handleDelete = (record: UserType) => {
+  const handleDelete = async (record: UserType) => {
     console.log('Eliminar:', record)
-  }
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_BASE_URL}/users/${record.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      console.log('response', response)
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar usuario');
+      }
 
-  const handleChangeStatus = (record: UserType) => {
-    console.log('Cambiar estado:', record)
-  }
+      message.success('Usuario eliminado con éxito');
+
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      message.error(error instanceof Error ? error.message : 'Error al eliminar usuario');
+    }
+    await loadUsers();
+  };
+
+  const handleChangeStatus = async (record: UserType) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const newStatus = record.estado === 'Activo' ? false : true;
+
+      const response = await fetch(`${API_BASE_URL}/users/${record.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar el estado del usuario');
+      }
+
+      message.success(`Usuario ${newStatus ? 'activado' : 'desactivado'} con éxito`);
+      await loadUsers();
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      message.error(error instanceof Error ? error.message : 'Error al actualizar el estado del usuario');
+    }
+  };
 
   const getItems = (record: UserType): MenuProps['items'] => [
     {
@@ -213,17 +260,112 @@ const UsersPage = () => {
     },
   ]
 
-  const handleCreateUser = (values: any) => {
-    // Implementar lógica para crear usuario
-    console.log('Crear usuario:', values);
-    setModalOpen(false);
+  const updateUser = async (id: number, user: any) => {
+    try {
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: user.nombre,
+          username: user.username,
+          ...(user.password && { password: user.password }),
+          ...(user.confirmPassword && { repeatedPassword: user.confirmPassword }),
+          lastName: user.apellido,
+          phone: user.telefono,
+          email: user.email,
+          status: true,
+          roles: user.rol
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar usuario');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
   };
 
-  const handleEditUser = (values: any) => {
-    // Implementar lógica para editar usuario
-    console.log('Editar usuario:', values, editingUser?.id);
+  const handleCreateUser = async (values: any) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: values.nombre,
+          username: values.username,
+          password: values.password,
+          repeatedPassword: values.confirmPassword,
+          lastName: values.apellido,
+          phone: String(values.telefono),
+          email: values.email,
+          status: true,
+          roles: [values.rol]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al crear usuario');
+      }
+
+      message.success('Usuario creado con éxito');
+      return { success: true };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      message.error(error instanceof Error ? error.message : 'Error al crear usuario');
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  };
+
+  const handleSubmit = async (values: any) => {
+    setLoading(true);
+    if (editingUser) {
+      await handleEditUser(values);
+    } else {
+      await handleCreateUser(values);
+    }
     setModalOpen(false);
+    setLoading(false);
     setEditingUser(null);
+    await loadUsers();
+  };
+
+
+  const handleEditUser = async (values: any) => {
+    const id = editingUser?.id;
+
+    if (!id) {
+      message.error('ID de usuario no encontrado');
+      return;
+    }
+
+    const result = await updateUser(id, values);
+    if (result.success) {
+      message.success('Usuario actualizado con éxito');
+    } else {
+      message.error(result.error);
+    }
   };
 
   const handleEdit = (record: UserType) => {
@@ -237,7 +379,10 @@ const UsersPage = () => {
       <div className='row mb-3'>
         <div className='col-12 d-flex justify-content-end'>
           <Button
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              setEditingUser(null);
+              setModalOpen(true);
+            }}
             style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
             type="primary"
             icon={<PlusOutlined />}
@@ -259,7 +404,7 @@ const UsersPage = () => {
           setModalOpen(false);
           setEditingUser(null);
         }}
-        onSubmit={editingUser ? handleEditUser : handleCreateUser}
+        onSubmit={handleSubmit}
         initialValues={editingUser}
         title={editingUser ? 'Editar Usuario' : 'Crear Usuario'}
       />

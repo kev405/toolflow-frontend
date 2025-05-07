@@ -21,15 +21,20 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     const [form] = Form.useForm();
 
     useEffect(() => {
-        console.log('initialValues', initialValues);
-        if (initialValues?.password || initialValues?.telefono) {
+        if (!open) {
+            form.resetFields();
+            return;
+        }
+
+        if (initialValues) {
             form.setFieldsValue({
-                confirmPassword: initialValues.password,
+                ...initialValues,
                 confirmTelefono: initialValues.telefono
             });
+        } else {
+            form.resetFields();
         }
-    }, [initialValues]);
-
+    }, [open, initialValues]);
     return (
         <Modal
             open={open}
@@ -55,7 +60,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 form={form}
                 layout="vertical"
                 onFinish={onSubmit}
-                initialValues={initialValues}
                 className="mt-3"
             >
                 <div className="row g-3">
@@ -98,7 +102,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     <div className="col-md-6">
                         <Form.Item
                             name="password"
-                            rules={[{ required: true, message: 'Por favor ingresa la contraseña' }]}
                         >
                             <Input.Password placeholder="Contraseña" />
                         </Form.Item>
@@ -107,7 +110,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                         <Form.Item
                             name="confirmPassword"
                             rules={[
-                                { required: true, message: 'Por favor confirma la contraseña' },
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
                                         if (!value || getFieldValue('password') === value) {
@@ -157,9 +159,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     rules={[{ required: true, message: 'Por favor selecciona el rol' }]}
                 >
                     <Select placeholder="Seleccione el Rol">
-                        <Select.Option value="Administrador">Administrador</Select.Option>
-                        <Select.Option value="Profesor">Profesor</Select.Option>
-                        <Select.Option value="Estudiante">Estudiante</Select.Option>
+                        <Select.Option value="ADMINISTRATOR">Administrador</Select.Option>
+                        <Select.Option value="PROFESOR">Profesor</Select.Option>
+                        <Select.Option value="ESTUDIANTE">Estudiante</Select.Option>
                         <Select.Option value="Administrador de herramientas">Administrador de herramientas</Select.Option>
                     </Select>
                 </Form.Item>
