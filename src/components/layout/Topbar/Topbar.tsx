@@ -33,13 +33,8 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
         <i className="fa fa-bars"></i>
       </button>
 
-      {/* Componente Buscador - Versión escritorio */}
-      <SearchBar />
-
       {/* Navegación superior */}
       <ul className="navbar-nav ml-auto">
-        {/* Componente Buscador - Versión móvil */}
-        <SearchBar isMobile />
         
         {/* Componente Alertas */}
         <AlertsDropdown alerts={defaultAlerts} />
