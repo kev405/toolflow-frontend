@@ -187,12 +187,6 @@ const UsersPage = () => {
       label: 'Eliminar',
       icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
       onClick: () => handleDelete(record)
-    },
-    {
-      key: '3',
-      label: 'Cambiar estado',
-      icon: <SyncOutlined style={{ color: '#52c41a' }} />,
-      onClick: () => handleChangeStatus(record)
     }
   ]
 
