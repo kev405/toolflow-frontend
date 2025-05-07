@@ -7,11 +7,11 @@ export const PublicRoute = () => {
 
   if (loading) {
     <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spin size="large" />
-      </div>
+      <Spin size="large" />
+    </div>
   }
 
   //return !isAuthenticated ? <Outlet /> : <Navigate to="/tools" replace />;
   //return true ? <Outlet /> : <Navigate to="/tools" replace />;
-  return isAuthenticated ? <Outlet /> : <Navigate to="/users" replace />;
+  return !isAuthenticated ? <Outlet /> : <Navigate to="/users" replace />;
 };

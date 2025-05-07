@@ -85,8 +85,9 @@ const UsersPage = () => {
           apellido: user.lastName,
           email: user.email,
           telefono: user.phone,
-          rol: user.role,
-          estado: user.status ? 'Activo' : 'Inactivo'
+          rol: user.roles,
+          estado: user.status ? 'Activo' : 'Inactivo',
+          password: user.password,
         }));
 
         setData(formattedUsers);
@@ -117,7 +118,7 @@ const UsersPage = () => {
       sortOrder: sorter.order ? sorter.order.replace('end', '') : 'asc'
     })
   }
- 
+
 
   const handleDelete = (record: UserType) => {
     console.log('Eliminar:', record)
@@ -193,6 +194,12 @@ const UsersPage = () => {
       title: 'Rol',
       dataIndex: 'rol',
       key: 'rol',
+      render: (roles: string[]) => {
+        if (Array.isArray(roles)) {
+          return roles.join(', ');
+        }
+        return roles;
+      }
     },
     {
       title: 'Estado',
@@ -255,7 +262,7 @@ const UsersPage = () => {
         onSubmit={editingUser ? handleEditUser : handleCreateUser}
         initialValues={editingUser}
         title={editingUser ? 'Editar Usuario' : 'Crear Usuario'}
-      />      
+      />
     </div >
   )
 }

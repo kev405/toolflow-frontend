@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, Form, Input, Select } from 'antd';
 
 interface UserFormModalProps {
@@ -19,6 +19,16 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     loading = false
 }) => {
     const [form] = Form.useForm();
+
+    useEffect(() => {
+        console.log('initialValues', initialValues);
+        if (initialValues?.password || initialValues?.telefono) {
+            form.setFieldsValue({
+                confirmPassword: initialValues.password,
+                confirmTelefono: initialValues.telefono
+            });
+        }
+    }, [initialValues]);
 
     return (
         <Modal
