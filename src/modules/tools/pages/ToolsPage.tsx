@@ -5,9 +5,7 @@ import type { MenuProps } from 'antd'
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { ToolFormModal } from '../components/ToolFormModal'
 import { ToolFilters } from '../components/ToolFilters'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
-
+import { API_BASE_URL } from '../../../config'
 
 interface PaginationParams {
   current: number;
@@ -560,6 +558,7 @@ const ToolsPage = () => {
         onChange={handleTableChange}
       />
       <ToolFormModal
+        id={editingTool?.id}
         open={modalOpen}
         onClose={() => {
           setEditingTool(null);

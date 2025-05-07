@@ -4,6 +4,7 @@ import { CategoryType, ToolPayload } from '../pages/ToolsPage';
 import CategorySelector from './CategorySelector';
 
 interface ToolFormModalProps {
+  id?: number;
   open: boolean;
   onClose: () => void;
   onSubmit: (values: ToolPayload) => void;
@@ -14,6 +15,7 @@ interface ToolFormModalProps {
 }
 
 export const ToolFormModal: React.FC<ToolFormModalProps> = ({
+  id,
   open,
   onClose,
   onSubmit,
@@ -23,7 +25,7 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
   categories
 }) => {
   const [form] = Form.useForm();
-  const isEditing = !!initialValues;
+  const isEditing = !!id;
 
   useEffect(() => {
     if (open) {
@@ -37,7 +39,7 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
 
   const handleClose = () => {
     form.resetFields();
-    onClose(); 
+    onClose();
   };
 
   return (
