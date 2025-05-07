@@ -24,6 +24,7 @@ export function AppRouter() {
         {/* Public Routes */}
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<Login />} />
+          
         </Route>
 
         {/* Private Routes */}
@@ -32,12 +33,12 @@ export function AppRouter() {
 
             {/* Redirect / to /tools */}
             <Route path="/" element={<Navigate to="/tools" replace />} />
-            
+            <Route path="/users" element={<Users />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/loans" element={<Loans />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/transfers" element={<Transfers />} />
-            <Route path="/users" element={<Users />} />
+            
             <Route path="/vehicles" element={<Vehicles />} />
           </Route>
         </Route>
