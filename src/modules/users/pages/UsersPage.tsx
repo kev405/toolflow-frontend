@@ -1,4 +1,3 @@
-import React from 'react'
 import { Table, Space } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 
@@ -29,7 +28,7 @@ const UsersPage = () => {
     {
       title: 'Opciones',
       key: 'actions',
-      render: (_, record) => (
+      render: (_) => (
         <Space size="middle">
           <a href="#" className="btn btn-primary btn-icon-split">
             <span className="icon text-white-50">
