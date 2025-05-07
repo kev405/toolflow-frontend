@@ -4,10 +4,6 @@ import { UserAvatar } from '../Topbar/components/UserAvatar';
 
 export interface TopbarProps {
   onMenuToggle: () => void;
-  user: {
-    name: string;
-    avatar: string;
-  };
 }
 
 export const Topbar = ({ onMenuToggle }: TopbarProps) => {
