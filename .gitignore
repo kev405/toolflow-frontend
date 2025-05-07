@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Coverage reports
+coverage
+*.lcov
+.lcov-report
+.nyc_output

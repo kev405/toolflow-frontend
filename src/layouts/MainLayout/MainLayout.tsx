@@ -64,10 +64,12 @@ export const MainLayout = () => {
       
       <div 
         className={`main-content-wrapper ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+        style={{ 
+          width: sidebarCollapsed ? '100%' : 'calc(100% - 14rem)',
+        }}
       >
         <Topbar 
           onMenuToggle={toggleSidebar}
-          user={{ name: "Admin", avatar: "/default-avatar.png" }}
         />
         
         <div className="content-container">
