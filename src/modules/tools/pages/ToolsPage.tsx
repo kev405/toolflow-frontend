@@ -3,8 +3,8 @@ import { Table, Button, Dropdown, Tag, Modal, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import { ToolFormModal } from '../components.tsx/ToolFormModal'
-import { ToolFilters } from '../components.tsx/ToolFilters'
+import { ToolFormModal } from '../components/ToolFormModal'
+import { ToolFilters } from '../components/ToolFilters'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
 
