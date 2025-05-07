@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Space, Button, Dropdown, Tag, message } from 'antd'
+import { Table, Space, Button, Dropdown, Tag, message, Modal } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { EditOutlined, DeleteOutlined, SyncOutlined, PlusOutlined } from '@ant-design/icons'
@@ -120,30 +120,38 @@ const UsersPage = () => {
   }
 
 
-  const handleDelete = async (record: UserType) => {
-    console.log('Eliminar:', record)
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/users/${record.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+  const handleDelete = (record: UserType) => {
+    Modal.confirm({
+      title: '¿Eliminar usuario?',
+      content: `¿Estás seguro que deseas eliminar el usuario "${record.username}"? Esta acción no se puede deshacer.`,
+      okText: 'Sí, eliminar',
+      okType: 'danger',
+      cancelText: 'Cancelar',
+      centered: true,
+      onOk: async () => {
+        try {
+          const token = localStorage.getItem('authToken');
+          const response = await fetch(`${API_BASE_URL}/users/${record.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al eliminar usuario');
+          }
+
+          message.success('Usuario eliminado con éxito');
+          await loadUsers();
+        } catch (error) {
+          console.error('Error deleting user:', error);
+          message.error(error instanceof Error ? error.message : 'Error al eliminar usuario');
         }
-      });
-      console.log('response', response)
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar usuario');
       }
-
-      message.success('Usuario eliminado con éxito');
-
-    } catch (error) {
-      console.error('Error deleting user:', error);
-      message.error(error instanceof Error ? error.message : 'Error al eliminar usuario');
-    }
-    await loadUsers();
+    });
   };
 
   const handleChangeStatus = async (record: UserType) => {
