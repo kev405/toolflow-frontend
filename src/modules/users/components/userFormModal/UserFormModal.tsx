@@ -112,7 +112,11 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                             rules={[
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
-                                        if (!value || getFieldValue('password') === value) {
+                                        const password = getFieldValue('password');
+                                        if (!password && !value) {
+                                            return Promise.resolve();
+                                        }
+                                        if (password === value) {
                                             return Promise.resolve();
                                         }
                                         return Promise.reject(new Error('Las contraseñas no coinciden'));
@@ -158,11 +162,11 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                     name="rol"
                     rules={[{ required: true, message: 'Por favor selecciona el rol' }]}
                 >
-                    <Select placeholder="Seleccione el Rol">
+                    <Select placeholder="Seleccione el Rol" mode='multiple'>
                         <Select.Option value="ADMINISTRATOR">Administrador</Select.Option>
-                        <Select.Option value="PROFESOR">Profesor</Select.Option>
-                        <Select.Option value="ESTUDIANTE">Estudiante</Select.Option>
-                        <Select.Option value="Administrador de herramientas">Administrador de herramientas</Select.Option>
+                        <Select.Option value="TEACHER">Profesor</Select.Option>
+                        <Select.Option value="STUDENT">Estudiante</Select.Option>
+                        <Select.Option value="TOOL_ADMINISTRATOR">Administrador de herramientas</Select.Option>
                     </Select>
                 </Form.Item>
             </Form>

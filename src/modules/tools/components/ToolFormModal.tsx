@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Switch, Row, Col, Button } from 'antd';
 import { CategoryType, ToolPayload } from '../pages/ToolsPage';
 import CategorySelector from './CategorySelector';
+import { useWatch } from 'antd/es/form/Form';
 
 interface ToolFormModalProps {
   id?: number;
@@ -41,6 +42,8 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
     form.resetFields();
     onClose();
   };
+
+  const consumable = useWatch('consumable', form);
 
   return (
     <Modal
@@ -126,17 +129,7 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
             </>
           )}
 
-          <Col span={12}>
-            <Form.Item
-              name="minimalRegistration"
-              label="Registro Mínimo"
-              rules={[{ required: true, message: 'Por favor ingresa el registro mínimo' }]}
-            >
-              <InputNumber min={0} style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-
-          <Col span={6}>
+          <Col span={5}>
             <Form.Item
               name="consumable"
               label="¿Es Consumible?"
@@ -145,6 +138,19 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
               <Switch />
             </Form.Item>
           </Col>
+
+          {consumable && (
+            <Col span={7}>
+              <Form.Item
+                name="minimalRegistration"
+                label="Registro Mínimo"
+                rules={[{ required: true, message: 'Por favor ingresa el registro mínimo' }]}
+              >
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          )}
+
           <Col span={24}>
             <Form.Item
               name="notes"
