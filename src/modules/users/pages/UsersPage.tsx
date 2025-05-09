@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Space, Button, Dropdown, Tag, message, Modal } from 'antd'
+import { Table, Button, Dropdown, Tag, message, Modal } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
 import { EditOutlined, DeleteOutlined, SyncOutlined, PlusOutlined } from '@ant-design/icons'
 import { UserFormModal } from '../components/userFormModal/UserFormModal'
 import { API_BASE_URL } from '../../../config'
+import { useAuth } from '../../../hooks/useAuth'
 
 
 interface UserType {
@@ -65,6 +66,8 @@ const UsersPage = () => {
     sortField: 'name',
     sortOrder: 'asc'
   });
+
+  const { user } = useAuth(); 
 
   const loadUsers = async () => {
     setLoading(true);
@@ -129,6 +132,11 @@ const UsersPage = () => {
       cancelText: 'Cancelar',
       centered: true,
       onOk: async () => {
+        if (user?.id === record.username) {
+          message.error('No puedes eliminar tu propio usuario');
+          return;
+        }
+
         try {
           const token = localStorage.getItem('authToken');
           const response = await fetch(`${API_BASE_URL}/users/${record.id}`, {
@@ -195,7 +203,7 @@ const UsersPage = () => {
       label: 'Eliminar',
       icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
       onClick: () => handleDelete(record)
-    }    
+    }
   ]
 
   const columns: ColumnsType<UserType> = [
@@ -244,10 +252,30 @@ const UsersPage = () => {
       dataIndex: 'rol',
       key: 'rol',
       render: (roles: string[]) => {
+        const roleLabels: Record<string, string> = {
+          ADMINISTRATOR: 'ADMINISTRADOR',
+          TEACHER: 'PROFESOR',
+          STUDENT: 'ESTUDIANTE',
+          TOOL_ADMINISTRATOR: 'ADMINISTRADOR DE HERRAMIENTAS',
+        };
+
         if (Array.isArray(roles)) {
-          return roles.join(', ');
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {roles.map((role) => (
+                <Tag key={role} color="default">
+                  {roleLabels[role] || role}
+                </Tag>
+              ))}
+            </div>
+          );
         }
-        return roles;
+
+        return (
+          <Tag color="default">
+            {roleLabels[roles] || roles}
+          </Tag>
+        );
       }
     },
     {
@@ -255,7 +283,7 @@ const UsersPage = () => {
       dataIndex: 'estado',
       key: 'estado',
       render: (estado: string) => (
-        <Tag color={estado === 'Activo' ? 'success' : 'error'}>
+        <Tag color={estado === 'Activo' ? 'success' : 'error'} style={{ textTransform: 'uppercase' }}>
           {estado}
         </Tag>
       ),

@@ -1,11 +1,12 @@
 import { jwtDecode } from 'jwt-decode';
 import { useState, useEffect, useCallback } from 'react';
+import { API_BASE_URL } from '../config';
 
 interface User {
-  id: number;
+  id: string;
   username: string;
   name: string;
-  role: string;
+  role: {authority: string}[];
 }
 
 interface AuthCredentials {
@@ -34,7 +35,6 @@ interface AuthActions {
 
 type UseAuthHook = AuthState & AuthActions;
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9009';
 const AUTH_ENDPOINTS = {
   authenticate: `${API_BASE_URL}/auth/authenticate`,
   validateToken: `${API_BASE_URL}/auth/validate-token`
