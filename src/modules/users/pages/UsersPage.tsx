@@ -346,7 +346,7 @@ const UsersPage = () => {
           phone: String(values.telefono),
           email: values.email,
           status: true,
-          roles: [values.rol]
+          roles: values.rol
         })
       });
 
