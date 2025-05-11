@@ -81,7 +81,7 @@ docker rm ${APP_NAME} || true
 
 # Iniciar un nuevo contenedor con la imagen actualizada
 # Se asume que el contenedor expone el servicio en el puerto 80 y se mapea al puerto 3000 en el host
-docker run -d --name ${APP_NAME} -p 80:80 ${DOCKER_IMAGE}:latest
+docker run -d --name ${APP_NAME} -p 3000:80 ${DOCKER_IMAGE}:latest
 EOF
 '''
                 }
