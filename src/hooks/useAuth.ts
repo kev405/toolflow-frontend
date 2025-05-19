@@ -6,7 +6,7 @@ interface User {
   id: string;
   username: string;
   name: string;
-  role: {authority: string}[];
+  role: { authority: string }[];
 }
 
 interface AuthCredentials {
@@ -54,32 +54,32 @@ export const useAuth = (): UseAuthHook => {
         id: decoded.userId || decoded.sub,
         username: decoded.username || decoded.sub,
         name: decoded.name || '',
-        role: decoded.role || 'user'
+        role: decoded.role || [{ authority: 'user' }]
       };
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
     }
   }, []);
-  
+
   const clearAuth = useCallback((): void => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
   }, []);
-  
+
   const validateToken = useCallback(async (token: string): Promise<boolean> => {
     if (!token) return false;
-  
+
     try {
       const decoded: any = jwtDecode(token);
       if (decoded.exp && Date.now() >= decoded.exp * 1000) {
         return false;
       }
-      
+
       const response = await fetch(`${AUTH_ENDPOINTS.validateToken}?jwt=${encodeURIComponent(token)}`, {
         method: 'GET',
       });
-      
+
       return response.ok;
     } catch (error) {
       console.error('Error validating token:', error);
@@ -91,7 +91,7 @@ export const useAuth = (): UseAuthHook => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('authToken');
       const userData = localStorage.getItem('userData');
-  
+
       if (token) {
         try {
           const isValid = await validateToken(token);
@@ -110,12 +110,12 @@ export const useAuth = (): UseAuthHook => {
         }
         clearAuth();
       }
-  
+
       setAuthState((prev) => ({ ...prev, loading: false }));
     };
-  
+
     initializeAuth();
-  }, []); // Ensure dependencies are stable
+  }, []);
 
   const login = useCallback(async (credentials: AuthCredentials): Promise<AuthResponse> => {
     try {
@@ -139,7 +139,7 @@ export const useAuth = (): UseAuthHook => {
       if (data.jwt) {
         localStorage.setItem('authToken', data.jwt);
         const user = getUserFromToken(data.jwt);
-        
+
         if (!user) {
           return {
             success: false,

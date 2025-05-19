@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { useState, useEffect } from 'react';
+import CryptoJS from 'crypto-js';
+
+const SECRET_KEY = 'my-secret-key';
 
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
@@ -9,16 +11,20 @@ export const LoginForm = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('rememberedUsername');
-    const savedPassword = localStorage.getItem('rememberedPassword');
-    if (savedUsername && savedPassword) {
+    const encryptedPassword = localStorage.getItem('rememberedPassword');
+
+    if (savedUsername && encryptedPassword) {
       setUsername(savedUsername);
-      setPassword(savedPassword);
+
+      const decryptedPassword = CryptoJS.AES.decrypt(encryptedPassword, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+      setPassword(decryptedPassword);
+
       setRememberMe(true);
     }
   }, []);
@@ -34,13 +40,17 @@ export const LoginForm = () => {
         setError(result.error || 'Credenciales inválidas');
         return;
       }
+
       if (rememberMe) {
         localStorage.setItem('rememberedUsername', username);
-        localStorage.setItem('rememberedPassword', password);
+
+        const encryptedPassword = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
+        localStorage.setItem('rememberedPassword', encryptedPassword);
       } else {
         localStorage.removeItem('rememberedUsername');
         localStorage.removeItem('rememberedPassword');
       }
+
       navigate('/');
     } catch (err) {
       setError('Error de conexión. Por favor intente nuevamente.');
@@ -55,7 +65,7 @@ export const LoginForm = () => {
       <div className="text-center">
         <h1 className="h4 text-gray-900 mb-4">¡Bienvenido de nuevo!</h1>
       </div>
-      
+
       {error && (
         <div className="alert alert-danger mb-3" role="alert">
           {error}

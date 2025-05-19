@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 interface AlertItem {
+  id: number;
   icon: string;
   iconBg: string;
   date: string;
@@ -49,7 +50,7 @@ export const AlertsDropdown = ({ alerts = [] }: AlertsDropdownProps) => {
           Centro de Alertas
         </h6>
         {alerts.map((alert) => (
-          <a className="dropdown-item d-flex align-items-center" href="#">
+          <a key={alert.id} className="dropdown-item d-flex align-items-center" href="#">
             <div className="mr-3">
               <div className={`icon-circle bg-${alert.iconBg}`}>
                 <i className={`fas fa-${alert.icon} text-white`}></i>
