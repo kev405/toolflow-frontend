@@ -71,7 +71,6 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
     return acc;
   }, {} as Record<number, number>);
 
-
   const handleClose = () => {
     form.resetFields();
     onClose();
@@ -223,8 +222,6 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
                   const currentTool = existingToolsMap[id];
                   const originalLoaned = originalLoanedMap?.[id] || 0;
 
-                  console.log("toolMeta", toolMeta)
-
                   return {
                     toolName: toolMeta?.toolName || currentTool.toolName || 'Desconocido',
                     consumable: toolMeta?.consumable ?? currentTool.consumable ?? false,
@@ -248,7 +245,6 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
                 });
 
               toolsData = [...filteredExisting, ...newTools];
-              console.log(toolsData)
             }
 
             return (

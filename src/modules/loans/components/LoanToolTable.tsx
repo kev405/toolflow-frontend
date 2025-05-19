@@ -27,7 +27,6 @@ interface LoanToolTableProps {
 }
 
 export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, isAdmin, isCreating, teachers, loanStatus, isCancelled }) => {
-  console.log('LoanToolTable', toolsData);
   const columns: ColumnsType<ToolDataRow> = [
     {
       title: 'Herramienta',
