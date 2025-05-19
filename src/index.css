@@ -14,3 +14,7 @@ body {
 .bg-gradient-primary {
   background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
 }
+
+.row-with-responsible {
+  background-color: #e6f7ff !important;
+}
