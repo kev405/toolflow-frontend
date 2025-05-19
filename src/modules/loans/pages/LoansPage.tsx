@@ -393,7 +393,7 @@ const LoansPage = () => {
       if (result.success && result.data) {
         const formattedData = result.data.map((loan: LoanType) => ({
           ...loan,
-          returned: !["ON_LOAN", "ORDER"].includes(loan.loanStatus),
+          returned: !["ON_LOAN", "ORDER", "CANCELLED", "OVERDUE"].includes(loan.loanStatus),
         }));
         setData(formattedData);
       }
