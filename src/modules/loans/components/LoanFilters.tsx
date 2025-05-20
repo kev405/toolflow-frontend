@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Select, DatePicker } from 'antd';
+import { Button, Select, DatePicker, Row, Col } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { labelMap, LoanStatusTag } from './LoanStatusTag';
 
@@ -35,56 +35,70 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
   onCreateClick,
 }) => {
   return (
-    <div className="row mb-3">
-      <div className="col-12 d-flex align-items-center flex-wrap gap-2">
-        {isAdmin && <Select
-          placeholder="Selecciona docente"
-          allowClear
-          value={teacher || undefined}
-          onChange={onTeacherChange}
-          style={{ width: 200 }}
-        >
-          {teachers.map((teacher) => (
-            <Option key={teacher.id} value={teacher.id}>
-              {teacher.name}
-            </Option>
-          ))}
-        </Select>}
-        <Select
-          placeholder="Selecciona responsable"
-          allowClear
-          value={responsible || undefined}
-          onChange={onResponsibleChange}
-          style={{ width: 200 }}
-        >
-          {responsibles.map((responsible) => (
-            <Option key={responsible.id} value={responsible.id}>
-              {responsible.name}
-            </Option>
-          ))}
-        </Select>
-        <DatePicker
-          placeholder="Fecha de vencimiento"
-          style={{ width: 180 }}
-          onChange={onDueDateChange}
-        />
-        <Select
-          placeholder="Estado del préstamo"
-          allowClear
-          value={loanStatus} onChange={onLoanStatusChange}
-          style={{ width: 300 }}
-        >
-          {Object.entries(labelMap).map(([key]) => {
-            if (key === 'ON_CREATE') return null;
-
-            return (
-              <Option key={key} value={key}>
-                <LoanStatusTag status={key as keyof typeof labelMap} />
-              </Option>
-            );
-          })}
-        </Select>
-        <div className="ms-auto">
+    <div className="mb-3">
+      <Row gutter={[16, 16]} align="middle" wrap>
+        <Col xs={24} md={20}>
+          <Row gutter={[16, 16]}>
+            {isAdmin && (
+              <Col xs={24} sm={12} md={6}>
+                <Select
+                  placeholder="Selecciona docente"
+                  allowClear
+                  value={teacher || undefined}
+                  onChange={onTeacherChange}
+                  style={{ width: '100%' }}
+                >
+                  {teachers.map((teacher) => (
+                    <Option key={teacher.id} value={teacher.id}>
+                      {teacher.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
+            )}
+            <Col xs={24} sm={12} md={6}>
+              <Select
+                placeholder="Selecciona responsable"
+                allowClear
+                value={responsible || undefined}
+                onChange={onResponsibleChange}
+                style={{ width: '100%' }}
+              >
+                {responsibles.map((responsible) => (
+                  <Option key={responsible.id} value={responsible.id}>
+                    {responsible.name}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <DatePicker
+                placeholder="Fecha de vencimiento"
+                style={{ width: '100%' }}
+                onChange={onDueDateChange}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6}>
+              <Select
+                placeholder="Estado del préstamo"
+                allowClear
+                value={loanStatus}
+                onChange={onLoanStatusChange}
+                style={{ width: '100%' }}
+              >
+                {Object.entries(labelMap).map(([key]) => {
+                  if (key === 'ON_CREATE') return null;
+                  return (
+                    <Option key={key} value={key}>
+                      <LoanStatusTag status={key as keyof typeof labelMap} />
+                    </Option>
+                  );
+                })}
+              </Select>
+            </Col>
+          </Row>
+        </Col>
+        <Col xs={24} md={4} style={{ textAlign: 'right' }}>
           <Button
             onClick={onCreateClick}
             style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
@@ -93,8 +107,8 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
           >
             Crear Préstamo
           </Button>
-        </div>
-      </div>
+        </Col>
+      </Row>
     </div>
   );
 };

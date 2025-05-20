@@ -48,15 +48,20 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
   return (
     <Modal
       open={open}
-      title={<div style={{ textAlign: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>{title}</div>}
+      title={title}
       onCancel={handleClose}
       onOk={() => form.submit()}
       confirmLoading={loading}
       width={800}
       centered
-      footer={null}
+      footer={[
+        <div className="d-flex justify-content-center mt-4">
+          <Button type="primary" htmlType="submit" form='tool-form' style={{ width: '50%' }}>
+            Guardar
+          </Button>
+        </div>,
+      ]}
       destroyOnClose
-      closeIcon={<span className="close">&times;</span>}
     >
       <Form
         form={form}
@@ -64,6 +69,7 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
         onFinish={onSubmit}
         initialValues={initialValues}
         className="mt-3"
+        id='tool-form'
       >
         <Row gutter={16}>
           <Col span={12}>
@@ -161,17 +167,6 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
           </Col>
           <CategorySelector categories={categories} />
         </Row>
-
-        <div className="d-flex justify-content-center mt-4">
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            style={{ width: '50%' }}
-          >
-            Guardar
-          </Button>
-        </div>
       </Form>
     </Modal>
   );
