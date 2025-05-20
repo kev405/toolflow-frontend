@@ -37,9 +37,6 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
       {/* Navegación superior */}
       <ul className="navbar-nav ml-auto">
-        
-        {/* Componente Alertas */}
-        <AlertsDropdown alerts={defaultAlerts} />
 
         <div className="topbar-divider d-none d-sm-block"></div>
 
