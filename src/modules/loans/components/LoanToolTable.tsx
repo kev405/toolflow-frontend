@@ -176,7 +176,8 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
       size="small"
       locale={{ emptyText: <div style={{ height: '1px' }} /> }}
       rowClassName={(record) => {
-        const responsible = form.getFieldValue(['tools', record.id.toString(), 'responsible', 'id']);
+        if (!record?.id) return '';
+        const responsible = form.getFieldValue(['tools', record.id.toString(), 'responsibleId']);
         return responsible ? 'row-with-responsible' : '';
       }}
     />

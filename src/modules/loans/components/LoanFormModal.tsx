@@ -142,7 +142,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
           <Col span={24}>
             <Form.Item name="sameDay" valuePropName="checked" style={{ marginBottom: 8 }}>
               <Checkbox
-                disabled={isCancelled}
+                disabled={isCancelled || isFinalized}
                 onChange={(e) => {
                   const checked = e.target.checked;
                   if (checked) {
@@ -166,7 +166,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
                 format="YYYY-MM-DD"
                 placeholder="Fecha de Vencimiento"
                 style={{ width: '100%' }}
-                disabled={Form.useWatch('sameDay', form) || isCancelled}
+                disabled={Form.useWatch('sameDay', form) || isCancelled || isFinalized}
                 variant={Form.useWatch('sameDay', form) ? 'borderless' : 'outlined'}
               />
             </Form.Item>
@@ -223,6 +223,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
                   const originalLoaned = originalLoanedMap?.[id] || 0;
 
                   return {
+                    id: toolMeta?.id || currentTool.id,
                     toolName: toolMeta?.toolName || currentTool.toolName || 'Desconocido',
                     consumable: toolMeta?.consumable ?? currentTool.consumable ?? false,
                     available: toolMeta?.available ?? currentTool.available ?? 0,
