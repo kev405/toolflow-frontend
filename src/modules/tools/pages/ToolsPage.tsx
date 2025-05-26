@@ -36,7 +36,7 @@ interface ToolType {
   onLoan: number;
   consumable: boolean;
   notes: string;
-  minimalRegistration: number;
+  minimalRegistration?: number;
   status: boolean;
   category: CategoryType;
 }
@@ -50,7 +50,7 @@ export interface ToolPayload {
   onLoan: number;
   notes: string;
   consumable: boolean;
-  minimalRegistration: number;
+  minimalRegistration?: number;
   status: boolean;
   category: string;
 }
@@ -420,16 +420,24 @@ const ToolsPage = () => {
 
   const handleSubmit = async (values: ToolPayload) => {
     setLoading(true);
-    if (editingTool) {
-      await handleEditTool(values);
-    } else {
-      await handleCreateTool(values);
+  
+    if (!values.consumable) {
+      delete values.minimalRegistration;
     }
-    setModalOpen(false);
-    setLoading(false);
-    setEditingTool(null);
-    await loadTools();
-    await loadCategories();
+  
+    try {
+      if (editingTool) {
+        await handleEditTool(values);
+      } else {
+        await handleCreateTool(values);
+      }
+      setModalOpen(false);
+      setEditingTool(null);
+      await loadTools();
+      await loadCategories();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getItems = (): MenuProps['items'] => [
@@ -525,7 +533,7 @@ const ToolsPage = () => {
       key: 'status',
       render: (status: boolean) => (
         <Tag color={status ? 'success' : 'error'}>
-          {status ? 'Activo' : 'Inactivo'}
+          {status ? 'ACTIVO' : 'INACTIVO'}
         </Tag>
       ),
     },

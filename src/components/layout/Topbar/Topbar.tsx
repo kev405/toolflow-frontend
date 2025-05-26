@@ -9,12 +9,14 @@ export interface TopbarProps {
 export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const defaultAlerts = [
     {
+      id: 1,
       icon: 'file-alt',
       iconBg: 'primary',
       date: '12 Diciembre, 2023',
       message: '¡Hay un nuevo reporte mensual disponible para descargar!'
     },
     {
+      id: 2,
       icon: 'donate',
       iconBg: 'success',
       date: '7 Diciembre, 2023',
@@ -35,9 +37,6 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
       {/* Navegación superior */}
       <ul className="navbar-nav ml-auto">
-        
-        {/* Componente Alertas */}
-        <AlertsDropdown alerts={defaultAlerts} />
 
         <div className="topbar-divider d-none d-sm-block"></div>
 

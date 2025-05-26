@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -36,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   showOverlay = false,
   overlayClick,
 }) => {
+  const { user: authUser } = useAuth();
   const [mobileView, setMobileView] = useState(window.innerWidth < 768);
 
   const handleResize = useCallback(() => {
@@ -101,19 +103,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <nav>
           <ul style={{ listStyle: 'none', padding: '0 1rem' }}>
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  className="nav-link"
-                  onClick={handleNavLinkClick}
-                  title={isCollapsed ? item.text : ''}
-                >
-                  <i className={`fas fa-${item.icon}`} />
-                  {!isCollapsed && <span>{item.text}</span>}
-                </NavLink>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              if (item.to === '/vehicles' && !authUser?.role.some((r) => r.authority)) {
+                return null;
+              }
+
+              return (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    className="nav-link"
+                    onClick={handleNavLinkClick}
+                    title={isCollapsed ? item.text : ''}
+                  >
+                    <i className={`fas fa-${item.icon}`} />
+                    {!isCollapsed && <span>{item.text}</span>}
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
