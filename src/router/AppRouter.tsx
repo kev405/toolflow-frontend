@@ -16,6 +16,7 @@ const Profile = lazy(() => import('..//modules/profile/pages/ProfilePage'));
 const Transfers = lazy(() => import('../modules/transfers/pages/TransfersPage'));
 const Users = lazy(() => import('../modules/users/pages/UsersPage'));
 const Vehicles = lazy(() => import('../modules/vehicles/pages/VehiclesPage'));
+const Headquarters = lazy(() => import('../modules/headquarter/pages/HeadquarterPage'));
 
 export function AppRouter() {
   return (
@@ -33,12 +34,12 @@ export function AppRouter() {
 
             {/* Redirect / to /tools */}
             <Route path="/" element={<Navigate to="/tools" replace />} />
+            <Route path="/headquarter" element={<Headquarters />} />
             <Route path="/users" element={<Users />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/loans" element={<Loans />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/transfers" element={<Transfers />} />
-            
             <Route path="/vehicles" element={<Vehicles />} />
           </Route>
         </Route>
