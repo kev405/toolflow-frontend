@@ -32,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { to: '/tools', icon: 'tools', text: 'Herramientas' },
     { to: '/transfers', icon: 'exchange-alt', text: 'Traslados' },
     { to: '/users', icon: 'users', text: 'Usuarios' },
+    { to: '/headquarter', icon: 'building', text: 'Sedes' },
   ],
   user,
   showOverlay = false,
