@@ -307,11 +307,12 @@ const HeadquartersPage = () => {
             key: '1',
             label: 'Editar',
             icon: <EditOutlined style={{ color: '#1890ff' }} />,
-          }, {
+          },
+          ...(record.main !== true ? [{
             key: '2',
             label: 'Eliminar',
             icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
-          }
+          }] : [])
         ];
 
         return (
