@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Button, Dropdown, Tag, message, Modal } from 'antd'
+import { Table, Button, Dropdown, Tag, message, Modal, Spin } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { MenuProps } from 'antd'
-import { EditOutlined, DeleteOutlined, SyncOutlined, PlusOutlined } from '@ant-design/icons'
-import { UserFormModal } from '../components/userFormModal/UserFormModal'
+import { EditOutlined, DeleteOutlined, SyncOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
+import { UserFormModal } from '../components/UserFormModal'
 import { API_BASE_URL } from '../../../config'
 import { useAuth } from '../../../hooks/useAuth'
+import { UserRoleTags } from  '../components/UserRoleTags'
+import { UserFilters } from '../components/UserFilters'
 
 
 interface UserType {
@@ -20,11 +22,62 @@ interface UserType {
   estado: string
 }
 
-const fetchUsers = async (page: number, size: number, sortField: string, sortOrder: string) => {
+const uploadStudentExcel = async (file: File): Promise<{ success: boolean; message: string }> => {
+  const token = localStorage.getItem('authToken');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/upload-students`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        success: false,
+        message: errorData.message || 'Error al subir archivo'
+      };
+    }
+
+    return { success: true, message: 'Archivo subido con éxito' };
+  } catch (error) {
+    console.error('Upload error:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error de red'
+    };
+  }
+};
+
+const fetchUsers = async (
+  page: number,
+  size: number,
+  sortField: string,
+  sortOrder: string,
+  role?: string | null
+) => {
   try {
     const token = localStorage.getItem('authToken');
 
-    const response = await fetch(`${API_BASE_URL}/users?page=${page}&size=${size}&sortField=${sortField}&sortOrder=${sortOrder}`, {
+    const queryParams = [
+      `page=${page}`,
+      `size=${size}`,
+      `sort=${sortField},${sortOrder}`
+    ];
+
+    if (role) {
+      queryParams.push(`searchColumn=role`);
+      queryParams.push(`search=${role}`);
+    }
+
+    const query = queryParams.join('&');
+
+    const response = await fetch(`${API_BASE_URL}/users?${query}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -52,6 +105,7 @@ const fetchUsers = async (page: number, size: number, sortField: string, sortOrd
   }
 };
 
+
 const UsersPage = () => {
   const [data, setData] = useState<UserType[]>([])
   const [loading, setLoading] = useState(false);
@@ -66,8 +120,10 @@ const UsersPage = () => {
     sortField: 'name',
     sortOrder: 'asc'
   });
+  const [uploading, setUploading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const loadUsers = async () => {
     setLoading(true);
@@ -76,7 +132,8 @@ const UsersPage = () => {
         tableParams.pagination.current - 1,
         tableParams.pagination.pageSize,
         tableParams.sortField,
-        tableParams.sortOrder
+        tableParams.sortOrder,
+        selectedRole
       );
 
       if (result.success && result.data) {
@@ -94,13 +151,13 @@ const UsersPage = () => {
         }));
 
         setData(formattedUsers);
-        setTableParams({
-          ...tableParams,
+        setTableParams((prev) => ({
+          ...prev,
           pagination: {
-            ...tableParams.pagination,
+            ...prev.pagination,
             total: result.total
           }
-        });
+        }));
       }
     } catch (error) {
       console.error('Error loading users:', error);
@@ -109,19 +166,57 @@ const UsersPage = () => {
     }
   };
 
-
   useEffect(() => {
     loadUsers();
-  }, [JSON.stringify(tableParams)]);
+  }, [
+    tableParams.pagination.current,
+    tableParams.pagination.pageSize,
+    tableParams.sortField,
+    tableParams.sortOrder,
+    selectedRole,
+  ])
 
-  const handleTableChange = (pagination: any, filters: any, sorter: any) => {
-    setTableParams({
-      pagination,
-      sortField: sorter.field || 'name',
-      sortOrder: sorter.order ? sorter.order.replace('end', '') : 'asc'
-    })
-  }
+  const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
+    setTableParams((prev) => ({
+      ...prev,
+      pagination: {
+        ...prev.pagination,
+        current: pagination.current,
+        pageSize: pagination.pageSize,
+      },
+      sortField: sorter.field || 'id',
+      sortOrder: sorter.order ? sorter.order.replace('end', '') : 'asc',
+    }));
+  };
 
+  const handleUploadStudents = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.xlsx')) {
+      message.error('El archivo debe ser un Excel (.xlsx)');
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const result = await uploadStudentExcel(file);
+
+      if (result.success) {
+        message.success(result.message);
+        await loadUsers();
+      } else {
+        message.error(result.message);
+      }
+    } catch (error) {
+      console.error('Error al subir archivo:', error);
+      message.error('Error inesperado al subir el archivo');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleDelete = (record: UserType) => {
     Modal.confirm({
@@ -162,35 +257,6 @@ const UsersPage = () => {
     });
   };
 
-  const handleChangeStatus = async (record: UserType) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const newStatus = record.estado === 'Activo' ? false : true;
-
-      const response = await fetch(`${API_BASE_URL}/users/${record.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          status: newStatus
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar el estado del usuario');
-      }
-
-      message.success(`Usuario ${newStatus ? 'activado' : 'desactivado'} con éxito`);
-      await loadUsers();
-    } catch (error) {
-      console.error('Error updating user status:', error);
-      message.error(error instanceof Error ? error.message : 'Error al actualizar el estado del usuario');
-    }
-  };
-
   const getItems = (record: UserType): MenuProps['items'] => [
     {
       key: '1',
@@ -221,62 +287,38 @@ const UsersPage = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
+      sorter: true,
     },
     {
       title: 'Nombre de usuario',
       dataIndex: 'username',
       key: 'username',
+      sorter: true,
     },
     {
       title: 'Nombre',
       dataIndex: 'nombre',
       key: 'nombre',
+      sorter: true,
     },
     {
       title: 'Apellido',
       dataIndex: 'apellido',
       key: 'apellido',
+      sorter: true,
+
     },
     {
       title: 'Email',
       dataIndex: 'email',
       key: 'email',
-    },
-    {
-      title: 'Teléfono',
-      dataIndex: 'telefono',
-      key: 'telefono',
+      sorter: true,
     },
     {
       title: 'Rol',
       dataIndex: 'rol',
       key: 'rol',
-      render: (roles: string[]) => {
-        const roleLabels: Record<string, string> = {
-          ADMINISTRATOR: 'ADMINISTRADOR',
-          TEACHER: 'PROFESOR',
-          STUDENT: 'ESTUDIANTE',
-          TOOL_ADMINISTRATOR: 'ADMINISTRADOR DE HERRAMIENTAS',
-        };
-
-        if (Array.isArray(roles)) {
-          return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {roles.map((role) => (
-                <Tag key={role} color="default">
-                  {roleLabels[role] || role}
-                </Tag>
-              ))}
-            </div>
-          );
-        }
-
-        return (
-          <Tag color="default">
-            {roleLabels[roles] || roles}
-          </Tag>
-        );
-      }
+      render: (roles: string[] | string) => <UserRoleTags roles={roles} />
     },
     {
       title: 'Estado',
@@ -404,41 +446,46 @@ const UsersPage = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <h1 className='h3 mb-3 text-gray-800'>Usuarios</h1>
-      <div className='row mb-3'>
-        <div className='col-12 d-flex justify-content-end'>
-          <Button
-            onClick={() => {
-              setEditingUser(null);
-              setModalOpen(true);
-            }}
-            style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
-            type="primary"
-            icon={<PlusOutlined />}
-          >
-            Crear Usuario
-          </Button>
-        </div>
-      </div>
-      <Table
-        columns={columns}
-        dataSource={data}
-        pagination={tableParams.pagination}
-        loading={loading}
-        onChange={handleTableChange}
-      />
-      <UserFormModal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingUser(null);
-        }}
-        onSubmit={handleSubmit}
-        initialValues={editingUser}
-        title={editingUser ? 'Editar Usuario' : 'Crear Usuario'}
-      />
-    </div >
+    <Spin spinning={uploading} tip={'Subiendo archivo...'}>
+      <div style={{ padding: '24px' }}>
+        <input
+          type="file"
+          accept=".xlsx"
+          id="upload-students-input"
+          style={{ display: 'none' }}
+          onChange={handleUploadStudents}
+        />
+        <h1 className='h3 mb-3 text-gray-800'>Usuarios</h1>
+        <UserFilters
+          selectedRole={selectedRole}
+          onRoleChange={(value) => setSelectedRole(value)}
+          onCreateClick={() => {
+            setEditingUser(null);
+            setModalOpen(true);
+          }}
+          onUploadClick={() => {
+            document.getElementById('upload-students-input')?.click();
+          }}
+        />
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={tableParams.pagination}
+          loading={loading}
+          onChange={handleTableChange}
+        />
+        <UserFormModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingUser(null);
+          }}
+          onSubmit={handleSubmit}
+          initialValues={editingUser}
+          title={editingUser ? 'Editar Usuario' : 'Crear Usuario'}
+        />
+      </div >
+    </Spin>
   )
 }
 
