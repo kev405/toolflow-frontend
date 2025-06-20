@@ -200,15 +200,26 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
             optionFilterProp="children"
             disabled={!isEditable}
           >
-            {tools.map(tool => (
-              <Select.Option
-                key={tool.id}
-                value={tool.id}
-                disabled={!tool.status || tool.available === 0}
-              >
-                {tool.toolName}
-              </Select.Option>
-            ))}
+            {tools.map(tool => {
+              const isOutOfStock = tool.available === 0;
+              const isInactive = tool.status === false;
+
+              return (
+                <Select.Option
+                  key={tool.id}
+                  value={tool.id}
+                  disabled={isOutOfStock || isInactive}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{tool.toolName}</span>
+                    <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
+                      {isOutOfStock && <Tag color="orange">AGOTADO</Tag>}
+                      {isInactive && <Tag color="red">INACTIVO</Tag>}
+                    </div>
+                  </div>
+                </Select.Option>
+              );
+            })}
           </Select>
         </Form.Item>
 

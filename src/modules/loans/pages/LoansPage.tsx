@@ -9,6 +9,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { API_BASE_URL } from '../../../config';
 import dayjs from 'dayjs';
 import { LoanStatusTag } from '../components/LoanStatusTag';
+import { ToolType } from '../../tools/pages/ToolsPage';
 
 interface LoanType {
   id: number;
@@ -346,7 +347,7 @@ const LoansPage = () => {
   const [data, setData] = useState<LoanType[]>([]);
   const [teachers, setTeachers] = useState<{ id: number, username: string, name: string }[]>([]);
   const [students, setStudents] = useState<{ id: number, username: string, name: string }[]>([]);
-  const [tools, setTools] = useState<{ id: number, toolName: string, consumable: boolean, available: number }[]>([]);
+  const [tools, setTools] = useState<ToolType[]>([]);
   const [loading, setLoading] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<string>('ON_CREATE');
   const [loan, setLoan] = useState<LoanPayload>(emptyLoan);
@@ -424,7 +425,28 @@ const LoansPage = () => {
     setLoading(true);
     try {
       const result = await fetchTools();
-      setTools(result.data);
+  
+      if (result.success && result.data) {
+        const filteredTools = result.data
+          .map((tool: ToolType) => {
+            const mainInventory = tool.inventories?.find(inv => inv.main);
+  
+            if (!mainInventory) {
+              return null;
+            }
+  
+            return {
+              ...tool,
+              quantity: mainInventory.quantity,
+              available: mainInventory.available,
+              damaged: mainInventory.damaged,
+              onLoan: mainInventory.onLoan,
+            };
+          })
+          .filter(Boolean);
+  
+        setTools(filteredTools as ToolType[]);
+      }
     } catch (error) {
       console.error('Error loading tools:', error);
       message.error('No se pudieron cargar las herramientas');

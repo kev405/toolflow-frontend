@@ -1,7 +1,8 @@
 import React from 'react';
-import { Button, Select, DatePicker, Row, Col } from 'antd';
+import { Button, Select, DatePicker, Row, Col, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { labelMap, LoanStatusTag } from './LoanStatusTag';
+import { ToolType } from '../../tools/pages/ToolsPage';
 
 const { Option } = Select;
 
@@ -11,7 +12,7 @@ interface LoanFiltersProps {
   responsibles: { id: number; name: string }[];
   teacher: string;
   responsible: string;
-  tools: { id: number; toolName: string; consumable: boolean; available: number }[];
+  tools: ToolType[];
   selectedTools: number[];
   dueDate: string | null;
   loanStatus: string | null;
@@ -110,11 +111,22 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
             style={{ width: '100%' }}
             optionFilterProp="children"
           >
-            {tools.map((tool) => (
-              <Option key={tool.id} value={tool.id}>
-                {tool.toolName}
-              </Option>
-            ))}
+            {tools.map((tool) => {
+              const isOutOfStock = tool.available === 0;
+              const isInactive = tool.status === false;
+
+              return (
+                <Option key={tool.id} value={tool.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{tool.toolName}</span>
+                    <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                      {isOutOfStock && <Tag color="orange">AGOTADO</Tag>}
+                      {isInactive && <Tag color="red">INACTIVO</Tag>}
+                    </div>
+                  </div>
+                </Option>
+              );
+            })}
           </Select>
         </Col>
         <Col xs={24} md={6} style={{ display: 'flex', justifyContent: 'flex-end' }}>

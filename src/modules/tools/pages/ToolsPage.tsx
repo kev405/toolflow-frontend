@@ -6,6 +6,7 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { ToolFormModal } from '../components/ToolFormModal'
 import { ToolFilters } from '../components/ToolFilters'
 import { API_BASE_URL } from '../../../config'
+import { EditableInventorySubTable } from '../components/EditableInventorySubTable'
 
 interface PaginationParams {
   current: number;
@@ -25,7 +26,18 @@ export interface CategoryType {
   status: boolean;
 }
 
-interface ToolType {
+export interface InventoryType {
+  id: number;
+  headquarterId: number;
+  name: string;
+  quantity: number;
+  available: number;
+  onLoan: number;
+  damaged: number;
+  main: boolean;
+}
+
+export interface ToolType {
   key: string;
   id: number;
   toolName: string;
@@ -39,6 +51,7 @@ interface ToolType {
   minimalRegistration?: number;
   status: boolean;
   category: CategoryType;
+  inventories?: InventoryType[];
 }
 
 export interface ToolPayload {
@@ -258,6 +271,42 @@ const createTool = async (tool: ToolPayload) => {
   }
 };
 
+const updateToolInventoryStock = async (
+  toolId: number,
+  headquarterId: number,
+  stock: {
+    available: number;
+    damaged: number;
+    onLoan: number;
+  }
+) => {
+  try {
+    const token = localStorage.getItem('authToken');
+
+    const response = await fetch(`${API_BASE_URL}/tools/${toolId}/headquarters/${headquarterId}/stock`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(stock)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al actualizar inventario');
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error actualizando inventario:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    };
+  }
+};
+
 const ToolsPage = () => {
   const [data, setData] = useState<ToolType[]>([])
   const [categories, setCategories] = useState<CategoryType[]>([])
@@ -440,6 +489,25 @@ const ToolsPage = () => {
     }
   };
 
+  const handleSaveInventoryRow = async (toolId: number, updatedRow: InventoryType) => {
+    const result = await updateToolInventoryStock(
+      toolId,
+      updatedRow.headquarterId,
+      {
+        available: updatedRow.available,
+        damaged: updatedRow.damaged,
+        onLoan: updatedRow.onLoan
+      }
+    );
+  
+    if (result.success) {
+      message.success('Inventario actualizado correctamente');
+      await loadTools();
+    } else {
+      message.error(`Error al guardar: ${result.error}`);
+    }
+  };
+
   const getItems = (): MenuProps['items'] => [
     {
       key: '1',
@@ -564,6 +632,25 @@ const ToolsPage = () => {
         pagination={tableParams.pagination}
         loading={loading}
         onChange={handleTableChange}
+        expandable={{
+          expandedRowRender: (record: ToolType) => (
+            <EditableInventorySubTable
+              inventories={record.inventories || []}
+              onChange={(updatedInventories) => {
+                setData(prev =>
+                  prev.map(tool =>
+                    tool.id === record.id
+                      ? { ...tool, inventories: updatedInventories }
+                      : tool
+                  )
+                );
+              }}
+              onSaveRow={async (updatedRow) => {
+                return await handleSaveInventoryRow(record.id, updatedRow);
+              }}
+            />
+          )
+        }}
       />
       <ToolFormModal
         id={editingTool?.id}
