@@ -23,10 +23,13 @@ interface LoanToolTableProps {
   isCreating?: boolean;
   loanStatus?: string;
   isCancelled?: boolean;
-  teachers: { id: number; name: string }[];
+  isEditable?: boolean;
+  allowMissingEdit?: boolean;
+  students: { id: number; name: string }[];
+  originalLoanedMap?: Record<number, number>;
 }
 
-export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, isAdmin, isCreating, teachers, loanStatus, isCancelled }) => {
+export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, isAdmin, isCreating, students, allowMissingEdit, isEditable, originalLoanedMap }) => {
   const columns: ColumnsType<ToolDataRow> = [
     {
       title: 'Herramienta',
@@ -65,7 +68,10 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
               (form.getFieldValue(['tools', record.id.toString(), 'requested']) || 0)
             }
             style={{ width: '100%' }}
-            disabled={(isAdmin && !isCreating && form.getFieldValue(['tools', record.id.toString(), 'requested'])) || isCancelled}
+            disabled={
+              !isEditable ||
+              (isAdmin && !isCreating && originalLoanedMap?.[record.id] !== undefined)
+            }
           />
         </Form.Item>
 
@@ -82,7 +88,7 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
               min={0}
               max={(record.available ?? 0) + (record.originalLoaned ?? 0)}
               style={{ width: '100%' }}
-              disabled={["FINALIZED", "MISSING_FINALIZED", "DAMAGED_FINALIZED", "MISSING_AND_DAMAGED_FINALIZED"].includes(loanStatus || '') || isCancelled}
+              disabled={!isEditable}
             />
           </Form.Item>
         )
@@ -98,7 +104,7 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
               min={0}
               style={{ width: '100%' }}
               max={form.getFieldValue(['tools', record.id.toString(), 'loaned']) || 0}
-              disabled={isCancelled}
+              disabled={!isEditable && !allowMissingEdit}
             />
           </Form.Item>
         )
@@ -114,7 +120,7 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
               min={0}
               style={{ width: '100%' }}
               max={form.getFieldValue(['tools', record.id.toString(), 'delivered']) || 0}
-              disabled={isCancelled}
+              disabled={!isEditable && !allowMissingEdit}
             />
           </Form.Item>
         )
@@ -143,7 +149,7 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
       render: (_, record) =>
         !isAdmin ? null : (
           <Form.Item name={['tools', record.id.toString(), 'notes']} style={{ margin: 0 }}>
-            <Input.TextArea autoSize={{ minRows: 1, maxRows: 3 }} disabled={isCancelled} />
+            <Input.TextArea autoSize={{ minRows: 1, maxRows: 3 }} disabled={!isEditable} />
           </Form.Item>
         )
     },
@@ -154,10 +160,10 @@ export const LoanToolTable: React.FC<LoanToolTableProps> = ({ form, toolsData, i
       width: 150,
       render: (_, record) => (
         <Form.Item name={['tools', record.id.toString(), 'responsibleId']} style={{ margin: 0 }}>
-          <Select placeholder="Selecciona responsable" allowClear style={{ width: '100%' }} disabled={["FINALIZED", "MISSING_FINALIZED", "DAMAGED_FINALIZED", "MISSING_AND_DAMAGED_FINALIZED"].includes(loanStatus || '') || isCancelled}>
-            {teachers.map((teacher) => (
-              <Select.Option key={teacher.id} value={teacher.id}>
-                {teacher.name}
+          <Select placeholder="Selecciona responsable" allowClear style={{ width: '100%' }} disabled={!isEditable}>
+            {students.map((student) => (
+              <Select.Option key={student.id} value={student.id}>
+                {student.name}
               </Select.Option>
             ))}
           </Select>

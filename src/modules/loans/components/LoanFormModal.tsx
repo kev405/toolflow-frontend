@@ -15,6 +15,7 @@ interface ToolOption {
 
 interface LoanFormModalProps {
   teachers: { id: number; name: string }[];
+  students: { id: number; name: string }[];
   tools: ToolOption[];
   isCreating: boolean;
   status: string;
@@ -28,6 +29,7 @@ interface LoanFormModalProps {
 
 const LoanFormModal: React.FC<LoanFormModalProps> = ({
   teachers,
+  students,
   tools,
   status,
   isCreating,
@@ -39,8 +41,21 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
   initialValues,
 }) => {
   const [form] = Form.useForm();
+
   const isCancelled = status === 'CANCELLED';
-  const isFinalized = ["FINALIZED", "MISSING_FINALIZED", "DAMAGED_FINALIZED", "MISSING_AND_DAMAGED_FINALIZED"].includes(status);
+
+  const isEditable =
+    !isCancelled &&
+    (
+      status === 'ON_CREATE' ||
+      (isAdmin && ['ORDER', 'ON_LOAN'].includes(status)) ||
+      (!isAdmin && status === 'ORDER')
+    );
+
+  const allowMissingEdit =
+    isAdmin &&
+    ['MISSING_FINALIZED', 'MISSING_AND_DAMAGED_FINALIZED', 'OVERDUE'].includes(status);
+
   const originalLoanValuesRef = useRef<LoanPayload | null>(null);
 
   useEffect(() => {
@@ -76,6 +91,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
     onClose();
   };
 
+
   return (
     <Modal
       open={open}
@@ -90,7 +106,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
       width={1200}
       footer={[
         <div className="d-flex justify-content-center mt-4">
-          <Button type="primary" htmlType="submit" form='loan-form' style={{ width: '50%' }} disabled={isCancelled}>
+          <Button type="primary" htmlType="submit" form='loan-form' style={{ width: '50%' }} disabled={!isEditable && !allowMissingEdit} >
             Guardar
           </Button>
         </div>,
@@ -113,7 +129,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
               label="Docente"
               rules={[{ required: true, message: 'Selecciona un docente' }]}
             >
-              <Select placeholder="Docente" disabled={!isAdmin || isFinalized} optionLabelProp='label' variant={!isAdmin || isFinalized ? 'borderless' : 'outlined'}>
+              <Select placeholder="Docente" disabled={!isAdmin || !isEditable} optionLabelProp='label' variant={!isAdmin || !isEditable ? 'borderless' : 'outlined'}>
                 {teachers.map((teacher) => (
                   <Select.Option key={teacher.id} value={teacher.id} label={teacher.name}>
                     {teacher.name}
@@ -128,10 +144,10 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
               label="Responsable Principal"
               rules={[{ required: true, message: 'Selecciona un estudiante' }]}
             >
-              <Select placeholder="Responsable Principal" showSearch optionFilterProp="children" disabled={isCancelled || isFinalized} variant={isCancelled || isFinalized ? 'borderless' : 'outlined'}>
-                {teachers.map((teacher) => (
-                  <Select.Option key={teacher.id} value={teacher.id} label={teacher.name}>
-                    {teacher.name}
+              <Select placeholder="Responsable Principal" showSearch optionFilterProp="children" disabled={!isEditable} variant={!isEditable ? 'borderless' : 'outlined'}>
+                {students.map((student) => (
+                  <Select.Option key={student.id} value={student.id} label={student.name}>
+                    {student.name}
                   </Select.Option>
                 ))}
               </Select>
@@ -142,7 +158,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
           <Col span={24}>
             <Form.Item name="sameDay" valuePropName="checked" style={{ marginBottom: 8 }}>
               <Checkbox
-                disabled={isCancelled || isFinalized}
+                disabled={!isEditable}
                 onChange={(e) => {
                   const checked = e.target.checked;
                   if (checked) {
@@ -166,7 +182,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
                 format="YYYY-MM-DD"
                 placeholder="Fecha de Vencimiento"
                 style={{ width: '100%' }}
-                disabled={Form.useWatch('sameDay', form) || isCancelled || isFinalized}
+                disabled={Form.useWatch('sameDay', form) || !isEditable}
                 variant={Form.useWatch('sameDay', form) ? 'borderless' : 'outlined'}
               />
             </Form.Item>
@@ -182,7 +198,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
             mode="multiple"
             placeholder="Herramientas"
             optionFilterProp="children"
-            disabled={isCancelled || isFinalized}
+            disabled={!isEditable}
           >
             {tools.map(tool => (
               <Select.Option
@@ -249,7 +265,18 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
             }
 
             return (
-              <LoanToolTable form={form} toolsData={toolsData} isAdmin={isAdmin} isCreating={isCreating} teachers={teachers} loanStatus={status} isCancelled={isCancelled} />
+              <LoanToolTable
+                form={form}
+                toolsData={toolsData}
+                isAdmin={isAdmin}
+                allowMissingEdit={allowMissingEdit}
+                isCreating={isCreating}
+                students={students}
+                loanStatus={status}
+                isCancelled={isCancelled}
+                isEditable={isEditable}
+                originalLoanedMap={originalLoanedMap}
+              />
             );
           }}
         </Form.Item>
@@ -261,7 +288,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
               label="Notas"
               rules={[{ max: 200, message: 'Máximo 200 caracteres' }]}
             >
-              <Input.TextArea rows={1} maxLength={200} placeholder="Notas adicionales" disabled={isCancelled} />
+              <Input.TextArea rows={1} maxLength={200} placeholder="Notas adicionales" disabled={!isEditable} />
             </Form.Item>
           </Col>
         </Row>
