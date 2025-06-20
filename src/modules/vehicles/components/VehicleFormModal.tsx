@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, Button, ColorPicker, Row, Col } from 'antd';
+import InputMask from 'react-input-mask';
+import { Modal, Form, Input, Button, Select, Row, Col } from 'antd';
 import { VehiclePayload } from '../pages/VehiclesPage';
+
+const { Option } = Select;
 
 interface VehicleFormModalProps {
   id?: number;
@@ -58,12 +61,18 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
             <Form.Item
               name="vehicleType"
               label="Tipo de Vehículo"
-              rules={[
-                { required: true, message: 'Por favor ingrese el tipo de vehículo' },
-                { pattern: /^[a-zA-Z\s]+$/, message: 'Solo se permiten letras y espacios' },
-              ]}
+              rules={[{ required: true, message: 'Por favor seleccione el tipo de vehículo' }]}
             >
-              <Input placeholder="Ejemplo: Camioneta, Auto, Moto" />
+              <Select placeholder="Seleccione el tipo de vehículo">
+                <Option value="car">
+                  <i className="fas fa-car" style={{ marginRight: 8 }} />
+                  Automóvil
+                </Option>
+                <Option value="motorcycle">
+                  <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
+                  Motocicleta
+                </Option>
+              </Select>
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -72,10 +81,31 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
               label="Placa"
               rules={[
                 { required: true, message: 'Por favor ingrese la placa del vehículo' },
-                { pattern: /^[A-Z0-9-]+$/, message: 'Solo se permiten letras mayúsculas, números y guiones' },
+                {
+                  pattern: /^[A-Z]{3}-\d{3}$/,
+                  message: 'El formato debe ser ABC-123 (3 letras, guion, 3 números)',
+                },
               ]}
             >
-              <Input placeholder="Ejemplo: ABC-123" />
+              <InputMask
+                mask="aaa-999"
+                maskChar={null}
+              >
+                {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => {
+                  const { size, ...restProps } = inputProps;
+                  return (
+                    <Input
+                      {...restProps}
+                      placeholder="Ejemplo: ABC-123"
+                      maxLength={7}
+                      onInput={e => {
+                        const target = e.target as HTMLInputElement;
+                        target.value = target.value.toUpperCase();
+                      }}
+                    />
+                  );
+                }}
+              </InputMask>
             </Form.Item>
           </Col>
         </Row>
