@@ -21,6 +21,7 @@ interface LoanType {
     fullName: string;
   },
   dueDate: string;
+  receivedDate: string;
   loanStatus: string;
   tools: {
     id: number;
@@ -99,7 +100,8 @@ const fetchLoans = async (
   teacherName?: string,
   responsibleName?: string,
   dueDate?: string,
-  loanStatus?: string
+  loanStatus?: string,
+  selectedTools?: number[]
 ) => {
   try {
     const token = localStorage.getItem('authToken');
@@ -117,6 +119,10 @@ const fetchLoans = async (
     }
     if (loanStatus) {
       filters.push(`filter=loanStatus:${loanStatus}`);
+    }
+    if (selectedTools && selectedTools.length > 0) {
+      const toolsFilter = selectedTools.join(',');
+      filters.push(`filter=toolIds:${toolsFilter}`);
     }
 
     const query = [
@@ -159,6 +165,41 @@ const fetchTeachers = async () => {
     const token = localStorage.getItem('authToken');
 
     const response = await fetch(`${API_BASE_URL}/users/all/teachers`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al obtener categorías');
+    }
+
+    return {
+      success: true,
+      data: data.content || data
+    };
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error de red'
+    };
+  }
+}
+
+const fetchStudents = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+
+    const roles = ['STUDENT'];
+
+    const queryParams = roles.map(role => `roles=${encodeURIComponent(role)}`).join('&');
+
+    const response = await fetch(`${API_BASE_URL}/users/by-roles?${queryParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -304,6 +345,7 @@ const LoansPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [data, setData] = useState<LoanType[]>([]);
   const [teachers, setTeachers] = useState<{ id: number, username: string, name: string }[]>([]);
+  const [students, setStudents] = useState<{ id: number, username: string, name: string }[]>([]);
   const [tools, setTools] = useState<{ id: number, toolName: string, consumable: boolean, available: number }[]>([]);
   const [loading, setLoading] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<string>('ON_CREATE');
@@ -315,6 +357,7 @@ const LoansPage = () => {
   const [responsibleName, setResponsibleName] = useState('');
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [loanStatus, setLoanStatus] = useState<string | null>(null);
+  const [selectedTools, setSelectedTools] = useState<number[]>([]);
   const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
       current: 1,
@@ -359,6 +402,24 @@ const LoansPage = () => {
     }
   };
 
+  const loadStudents = async () => {
+    setLoading(true);
+    try {
+      const result = await fetchStudents();
+      const data = result.data.map((student: any) => ({
+        id: student.id,
+        name: `${student?.name} ${student?.lastName}`,
+        username: student?.username,
+      }));
+      setStudents(data);
+    } catch (error) {
+      console.error('Error loading students:', error);
+      message.error('No se pudieron cargar los estudiantes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadTools = async () => {
     setLoading(true);
     try {
@@ -375,6 +436,7 @@ const LoansPage = () => {
   useEffect(() => {
     loadTeachers();
     loadTools();
+    loadStudents();
   }, []);
 
   const loadLoans = async () => {
@@ -388,7 +450,8 @@ const LoansPage = () => {
         teacherName,
         responsibleName,
         dueDate ?? undefined,
-        loanStatus ?? undefined
+        loanStatus ?? undefined,
+        selectedTools 
       );
       if (result.success && result.data) {
         const formattedData = result.data.map((loan: LoanType) => ({
@@ -396,6 +459,13 @@ const LoansPage = () => {
           returned: !["ON_LOAN", "ORDER", "CANCELLED", "OVERDUE"].includes(loan.loanStatus),
         }));
         setData(formattedData);
+        setTableParams((prev) => ({
+          ...prev,
+          pagination: {
+            ...prev.pagination,
+            total: result.total
+          }
+        }));
       }
     } catch (error) {
       console.error('Error loading loans:', error);
@@ -433,7 +503,7 @@ const LoansPage = () => {
 
   useEffect(() => {
     debounceSearch();
-  }, [teacherName, responsibleName, dueDate, loanStatus]);
+  }, [teacherName, responsibleName, dueDate, loanStatus, selectedTools]);
 
   const handleEdit = (record: LoanType) => {
     const tools = record.tools.reduce((acc: any, tool: any) => {
@@ -681,6 +751,12 @@ const LoansPage = () => {
       sorter: true,
     },
     {
+      title: 'Fecha de Entrega',
+      dataIndex: 'receivedDate',
+      key: 'receivedDate',
+      sorter: true,
+    },
+    {
       title: 'Devuelto',
       dataIndex: 'returned',
       key: 'returned',
@@ -720,11 +796,14 @@ const LoansPage = () => {
       <LoanFilters
         isAdmin={isAdmin}
         teachers={teachers}
-        responsibles={teachers}
+        responsibles={students}
         teacher={teacherName}
         responsible={responsibleName}
         dueDate={dueDate}
         loanStatus={loanStatus}
+        tools={tools}
+        selectedTools={selectedTools}
+        onToolChange={setSelectedTools}
         onTeacherChange={setTeacherName}
         onResponsibleChange={setResponsibleName}
         onDueDateChange={(_, dateString) =>
@@ -754,6 +833,7 @@ const LoansPage = () => {
       />
       <LoanFormModal
         teachers={teachers}
+        students={students}
         tools={tools}
         isAdmin={isAdmin}
         isCreating={isCreating}
@@ -767,7 +847,7 @@ const LoansPage = () => {
           setDefaultStatus('ON_CREATE');
         }}
         onSubmit={handleSubmit}
-        title="Crear Préstamo"
+        title={isCreating ? 'Crear Préstamo' : 'Editar Préstamo'}
         initialValues={loan}
       />
     </div>
