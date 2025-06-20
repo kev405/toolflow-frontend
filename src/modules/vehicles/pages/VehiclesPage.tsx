@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { Table, Button, Dropdown, Modal, Spin, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { MenuProps } from 'antd';
@@ -31,6 +30,10 @@ export interface VehicleType {
   numberChasis: string;
   vehicleType: string;
   location: string;
+  headquarter?: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface VehiclePayload {
@@ -40,7 +43,7 @@ export interface VehiclePayload {
   model: string;
   color: string;
   numberChasis: string;
-  vehicleType: string;
+  vehicleType: string | null;
   location: string;
 }
 
@@ -51,9 +54,21 @@ const emptyVehicle: VehiclePayload = {
   model: '',
   color: '',
   numberChasis: '',
-  vehicleType: '',
+  vehicleType: null,
   location: '',
 };
+
+function debounce(func: (...args: any[]) => void, wait: number) {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: any[]) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}
 
 const fetchVehicles = async (
   page: number,
@@ -63,7 +78,7 @@ const fetchVehicles = async (
   vehicleType?: string,
   plate?: string,
   brand?: string,
-  color?: string
+  selectedHeadquarter?: number | null
 ) => {
   try {
     const token = localStorage.getItem('authToken');
@@ -72,7 +87,7 @@ const fetchVehicles = async (
     if (vehicleType) filters.push(`vehicleType=${vehicleType}`);
     if (plate) filters.push(`plate=${plate}`);
     if (brand) filters.push(`brand=${brand}`);
-    if (color) filters.push(`color=${color}`);
+    if (selectedHeadquarter) filters.push(`headquarterId=${selectedHeadquarter}`);
 
     const query = [
       `page=${page}`,
@@ -139,6 +154,28 @@ const deleteVehicle = async (id: number) => {
   }
 };
 
+const fetchHeadquarters = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/headquarters/all`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener sedes');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching headquarters:', error);
+    return [];
+  }
+}
+
 const VehiclesPage = () => {
   const { user, loading: authLoading } = useAuth();
   // const navigate = useNavigate();
@@ -153,10 +190,11 @@ const VehiclesPage = () => {
 
   const [data, setData] = useState<VehicleType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
   const [searchVehicleType, setSearchVehicleType] = useState('');
   const [searchPlate, setSearchPlate] = useState('');
   const [searchBrand, setSearchBrand] = useState('');
-  const [searchColor, setSearchColor] = useState('');
+  const [selectedHeadquarter, setSelectedHeadquarter] = useState<number | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<VehiclePayload | null>(null);
   const [tableParams, setTableParams] = useState<TableParams>({
@@ -180,7 +218,7 @@ const VehiclesPage = () => {
         searchVehicleType,
         searchPlate,
         searchBrand,
-        searchColor
+        selectedHeadquarter
       );
 
       if (result.success && result.data) {
@@ -205,6 +243,20 @@ const VehiclesPage = () => {
     }
   };
 
+  const loadHeadquarters = async () => {
+    try {
+      const headquarters = await fetchHeadquarters();
+      setHeadquarters(headquarters);
+    } catch (error) {
+      console.error('Error loading headquarters:', error);
+      message.error('Error al cargar las sedes');
+    }
+  };
+
+  useEffect(() => {
+    loadHeadquarters();
+  }, []);
+
   useEffect(() => {
     if (!authLoading && user) {
       loadVehicles();
@@ -215,11 +267,20 @@ const VehiclesPage = () => {
     tableParams.pagination.current,
     tableParams.pagination.pageSize,
     tableParams.sortField,
-    tableParams.sortOrder,
+    tableParams.sortOrder
+  ]);
+
+  const debounceSearch = debounce(() => {
+    loadVehicles();
+  }, 500);
+
+  useEffect(() => {
+    debounceSearch();
+  }, [
     searchVehicleType,
     searchPlate,
     searchBrand,
-    searchColor,
+    selectedHeadquarter
   ]);
 
   const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
@@ -309,7 +370,7 @@ const VehiclesPage = () => {
         icon: <EditOutlined style={{ color: '#1890ff' }} />,
       },
     ];
-  
+
     if (isAdmin) {
       items.push({
         key: '2',
@@ -317,10 +378,21 @@ const VehiclesPage = () => {
         icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
       });
     }
-  
+
     return items;
   };
-  
+
+  const renderPlate = (plate: string) => {
+    const [letters, numbers] = plate.split('-');
+    return (
+      <span className="plate-colombia">
+        {letters}
+        <span className="plate-dash">-</span>
+        {numbers}
+      </span>
+    );
+  };
+
   const columns: ColumnsType<VehicleType> = [
     {
       title: 'Acciones',
@@ -352,12 +424,24 @@ const VehiclesPage = () => {
       dataIndex: 'vehicleType',
       key: 'vehicleType',
       sorter: true,
+      render: (type: string) => {
+        const iconClass = type === 'car' ? 'fas fa-car' : 'fas fa-motorcycle';
+        const label = type === 'car' ? 'Automóvil' : 'Motocicleta';
+
+        return (
+          <span>
+            <i className={iconClass} style={{ marginRight: 8 }} />
+            {label}
+          </span>
+        );
+      },
     },
     {
       title: 'Placa',
       dataIndex: 'plate',
       key: 'plate',
       sorter: true,
+      render: (plate: string) => renderPlate(plate)
     },
     {
       title: 'Marca',
@@ -389,6 +473,13 @@ const VehiclesPage = () => {
       key: 'location',
       sorter: true,
     },
+    {
+      title: 'Sede',
+      dataIndex: ['headquarter', 'name'],
+      key: 'headquarter',
+      sorter: true,
+      render: (_: any, record: VehicleType) => record.headquarter?.name || '—',
+    },
   ];
 
   if (authLoading) {
@@ -415,12 +506,12 @@ const VehiclesPage = () => {
         searchVehicleType={searchVehicleType}
         searchPlate={searchPlate}
         searchBrand={searchBrand}
-        searchColor={searchColor}
         onSearchVehicleTypeChange={setSearchVehicleType}
         onSearchPlateChange={setSearchPlate}
         onSearchBrandChange={setSearchBrand}
-        onSearchColorChange={setSearchColor}
+        onSelectedHeadquarterChange={setSelectedHeadquarter}
         onCreateClick={() => setModalOpen(true)}
+        headquarters={headquarters}
       />
       <Table
         columns={columns}
