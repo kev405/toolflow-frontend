@@ -15,6 +15,17 @@ export const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Redirección y bloqueo de estudiantes
+  const handleLoginRedirect = (user: any) => {
+    if (!user || !user.role) return '/login';
+    const roles = user.role.map((r: any) => r.authority);
+    if (roles.includes('STUDENT')) return 'BLOCKED';
+    if (roles.includes('ADMINISTRATOR')) return '/tools';
+    if (roles.includes('TOOL_ADMINISTRATOR')) return '/loans';
+    if (roles.includes('TEACHER')) return '/loans';
+    return '/tools';
+  };
+
   useEffect(() => {
     const savedUsername = localStorage.getItem('rememberedUsername');
     const encryptedPassword = localStorage.getItem('rememberedPassword');
@@ -41,9 +52,15 @@ export const LoginForm = () => {
         return;
       }
 
+      // Bloquear estudiantes
+      const redirect = handleLoginRedirect(result.user);
+      if (redirect === 'BLOCKED') {
+        navigate('/404', { replace: true });
+        return;
+      }
+
       if (rememberMe) {
         localStorage.setItem('rememberedUsername', username);
-
         const encryptedPassword = CryptoJS.AES.encrypt(password, SECRET_KEY).toString();
         localStorage.setItem('rememberedPassword', encryptedPassword);
       } else {
@@ -51,7 +68,7 @@ export const LoginForm = () => {
         localStorage.removeItem('rememberedPassword');
       }
 
-      navigate('/');
+      navigate(redirect);
     } catch (err) {
       setError('Error de conexión. Por favor intente nuevamente.');
       console.error('Error de inicio de sesión:', err);

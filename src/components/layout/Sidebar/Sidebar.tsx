@@ -64,6 +64,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [mobileView, onToggle]);
 
+  // Filtrar ítems del menú según el rol
+  const getNavItemsByRole = () => {
+    if (!authUser || !authUser.role) return navItems;
+    const roles = authUser.role.map((r) => r.authority);
+    if (roles.includes('ADMINISTRATOR')) return navItems;
+    if (roles.includes('TOOL_ADMINISTRATOR')) return navItems.filter(item => item.to !== '/users' && item.to !== '/headquarter');
+    if (roles.includes('TEACHER')) return navItems.filter(item => item.to === '/loans');
+    return [];
+  };
+
+  const filteredNavItems = getNavItemsByRole();
+
   return (
     <>
       {showOverlay && (
@@ -104,11 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <nav>
           <ul style={{ listStyle: 'none', padding: '0 1rem' }}>
-            {navItems.map((item) => {
-              if (item.to === '/vehicles' && !authUser?.role.some((r) => r.authority)) {
-                return null;
-              }
-
+            {filteredNavItems.map((item) => {
               return (
                 <li key={item.to}>
                   <NavLink
