@@ -8,11 +8,7 @@ interface SidebarProps {
   brandIcon?: string;
   isCollapsed?: boolean;
   onToggle?: () => void;
-  navItems?: {
-    to: string;
-    icon: string;
-    text: string;
-  }[];
+  navItems?: (SidebarItem | SidebarItemWithSubmenu)[];
   user?: {
     name: string;
     avatar?: string;
@@ -21,14 +17,32 @@ interface SidebarProps {
   overlayClick?: () => void;
 }
 
+interface SidebarItem {
+  to: string;
+  icon: string;
+  text: string;
+}
+
+interface SidebarItemWithSubmenu {
+  icon: string;
+  text: string;
+  submenu: SidebarItem[];
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({
   brandName = 'ToolFlow',
   brandIcon = 'cog',
   isCollapsed = false,
-  onToggle,
-  navItems = [
+  onToggle,  navItems = [
     { to: '/loans', icon: 'hand-holding-usd', text: 'Préstamos' },
-    { to: '/vehicles', icon: 'car', text: 'Vehículos' },
+    {
+      icon: 'car',
+      text: 'Vehículos',
+      submenu: [
+        { to: '/vehicles', icon: 'car', text: 'Vehículos' },
+        { to: '/vehicle-parts', icon: 'cogs', text: 'Partes' },
+      ],
+    },
     { to: '/tools', icon: 'tools', text: 'Herramientas' },
     { to: '/transfers', icon: 'exchange-alt', text: 'Traslados' },
     { to: '/users', icon: 'users', text: 'Usuarios' },
@@ -63,15 +77,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
       onToggle();
     }
   }, [mobileView, onToggle]);
-
   // Filtrar ítems del menú según el rol
   const getNavItemsByRole = () => {
     if (!authUser || !authUser.role) return navItems;
     const roles = authUser.role.map((r) => r.authority);
     if (roles.includes('ADMINISTRATOR')) return navItems;
-    if (roles.includes('TOOL_ADMINISTRATOR')) return navItems.filter(item => item.to !== '/users' && item.to !== '/headquarter');
-    if (roles.includes('TEACHER')) return navItems.filter(item => item.to === '/loans');
-    return [];
+    
+    return navItems.filter(item => {
+      // Si el item tiene submenu, filtrar sus elementos
+      if ('submenu' in item) {
+        const filteredSubmenu = item.submenu.filter(subItem => {
+          if (roles.includes('TOOL_ADMINISTRATOR')) {
+            return subItem.to !== '/users' && subItem.to !== '/headquarter';
+          }
+          if (roles.includes('TEACHER')) {
+            return subItem.to === '/loans';
+          }
+          return true;
+        });
+        return filteredSubmenu.length > 0;
+      }
+      
+      // Para items simples
+      if (roles.includes('TOOL_ADMINISTRATOR')) {
+        return item.to !== '/users' && item.to !== '/headquarter';
+      }
+      if (roles.includes('TEACHER')) {
+        return item.to === '/loans';
+      }
+      return true;
+    });
   };
 
   const filteredNavItems = getNavItemsByRole();
@@ -116,20 +151,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <nav>
           <ul style={{ listStyle: 'none', padding: '0 1rem' }}>
-            {filteredNavItems.map((item) => {
-              return (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    className="nav-link"
-                    onClick={handleNavLinkClick}
-                    title={isCollapsed ? item.text : ''}
-                  >
-                    <i className={`fas fa-${item.icon}`} />
-                    {!isCollapsed && <span>{item.text}</span>}
-                  </NavLink>
-                </li>
-              );
+            {filteredNavItems.map((item, idx) => {
+              // Check if item is SidebarItemWithSubmenu
+              if ('submenu' in item && Array.isArray(item.submenu)) {
+                return (
+                  <li key={`submenu-${item.text}-${idx}`}>
+                    <div className="nav-link" title={isCollapsed ? item.text : ''}>
+                      <i className={`fas fa-${item.icon}`} />
+                      {!isCollapsed && <span>{item.text}</span>}
+                    </div>
+                    <ul style={{ listStyle: 'none', paddingLeft: isCollapsed ? 0 : '1.5rem' }}>
+                      {item.submenu.map((subItem) => (
+                        <li key={subItem.to}>
+                          <NavLink
+                            to={subItem.to}
+                            className="nav-link"
+                            onClick={handleNavLinkClick}
+                            title={isCollapsed ? subItem.text : ''}
+                          >
+                            <i className={`fas fa-${subItem.icon}`} />
+                            {!isCollapsed && <span>{subItem.text}</span>}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                );
+              } else {
+                // SidebarItem
+                const simpleItem = item as SidebarItem;
+                return (
+                  <li key={simpleItem.to}>
+                    <NavLink
+                      to={simpleItem.to}
+                      className="nav-link"
+                      onClick={handleNavLinkClick}
+                      title={isCollapsed ? simpleItem.text : ''}
+                    >
+                      <i className={`fas fa-${simpleItem.icon}`} />
+                      {!isCollapsed && <span>{simpleItem.text}</span>}
+                    </NavLink>
+                  </li>
+                );
+              }
             })}
           </ul>
         </nav>

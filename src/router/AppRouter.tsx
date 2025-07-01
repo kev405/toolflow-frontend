@@ -16,6 +16,7 @@ const Profile = lazy(() => import('..//modules/profile/pages/ProfilePage'));
 const Transfers = lazy(() => import('../modules/transfers/pages/TransfersPage'));
 const Users = lazy(() => import('../modules/users/pages/UsersPage'));
 const Vehicles = lazy(() => import('../modules/vehicles/pages/VehiclesPage'));
+const VehicleParts = lazy(() => import('../modules/vehicles/pages/VehiclePartsPage'));
 const Headquarters = lazy(() => import('../modules/headquarter/pages/HeadquarterPage'));
 
 export function AppRouter() {
@@ -41,6 +42,7 @@ export function AppRouter() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/transfers" element={<Transfers />} />
             <Route path="/vehicles" element={<Vehicles />} />
+            <Route path="/vehicle-parts" element={<VehicleParts />} />
           </Route>
         </Route>
 
