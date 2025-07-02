@@ -22,10 +22,10 @@ interface TableParams {
 }
 
 export interface VehiclePartInventoryType {
-  id: number;
   headquarterId: number;
-  name: string;
+  headquarterName: string;
   quantity: number;
+  vehicleId: number | null;
 }
 
 export interface VehiclePartType {
@@ -37,6 +37,7 @@ export interface VehiclePartType {
   description?: string;
   notes?: string;
   createdAt?: string;
+  inventories?: VehiclePartInventoryType[];
 }
 
 export interface VehiclePartPayload {
@@ -399,11 +400,13 @@ export const VehiclePartsPage: React.FC = () => {
 
   const handleSaveInventoryRow = async (partId: number, updatedRow: VehiclePartInventoryType) => {
     const result = await saveInventoryRow(partId, updatedRow);
+  
     if (result.success) {
       message.success('Inventario actualizado correctamente');
+      await loadVehicleParts();
       return { success: true };
     } else {
-      message.error(result.error || 'Error al actualizar inventario');
+      message.error(`Error al guardar: ${result.error}`);
       return { success: false, error: result.error };
     }
   };  const columns: ColumnsType<VehiclePartType> = [
@@ -457,17 +460,33 @@ export const VehiclePartsPage: React.FC = () => {
       dataIndex: 'model',
       key: 'model',
       sorter: true,
-    },    
-    {
+    },      {
       title: 'Cantidad Total',
       dataIndex: 'totalQuantity',
       key: 'totalQuantity',
-      render: () => '—', // Empty for now as requested
-    },{
+      render: (_, record) => {
+        if (!record.inventories || record.inventories.length === 0) return '0';
+        const total = record.inventories.reduce((sum, inv) => sum + inv.quantity, 0);
+        return total.toString();
+      },
+    },
+    {
       title: 'Vehículo Asociado',
       dataIndex: 'associatedVehicle',
       key: 'associatedVehicle',
-      render: () => '—', // Empty for now as requested
+      render: (_, record) => {
+        if (!record.inventories || record.inventories.length === 0) return '';
+        
+        // Find the first inventory with a vehicleId
+        const inventoryWithVehicle = record.inventories.find(inv => inv.vehicleId);
+        if (!inventoryWithVehicle) return '—';
+        
+        // Find the vehicle info from the vehicles list
+        const vehicle = vehicles.find(v => v.id === inventoryWithVehicle.vehicleId);
+        if (!vehicle) return `Vehículo ID: ${inventoryWithVehicle.vehicleId}`;
+        
+        return `${vehicle.plate} (${vehicle.brand} ${vehicle.model})`;
+      },
     },
 ];
 
@@ -485,8 +504,7 @@ export const VehiclePartsPage: React.FC = () => {
         onSelectedVehicleChange={setSelectedVehicle}
         onCreateClick={handleCreate}
         vehicles={vehicles}
-      />
-        <Table
+      />        <Table
         columns={columns}
         dataSource={vehicleParts}
         pagination={{
@@ -499,6 +517,26 @@ export const VehiclePartsPage: React.FC = () => {
         loading={loading}
         onChange={handleTableChange}
         scroll={{ x: 800 }}
+        expandable={{
+          expandedRowRender: (record: VehiclePartType) => (
+            <EditableInventorySubTable
+              inventories={record.inventories || []}
+              onChange={(updatedInventories) => {
+                setVehicleParts(prev =>
+                  prev.map(part =>
+                    part.id === record.id
+                      ? { ...part, inventories: updatedInventories }
+                      : part
+                  )
+                );
+              }}
+              onSaveRow={async (updatedRow) => {
+                return await handleSaveInventoryRow(record.id, updatedRow);
+              }}
+            />
+          ),
+          rowExpandable: (record) => !!(record.inventories && record.inventories.length > 0),
+        }}
       />
 
       <VehiclePartFormModal
