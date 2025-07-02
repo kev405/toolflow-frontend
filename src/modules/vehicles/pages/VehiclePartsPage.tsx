@@ -36,15 +36,7 @@ export interface VehiclePartType {
   model: string;
   description?: string;
   notes?: string;
-  totalQuantity: number;
-  vehicleType?: string;
-  associatedVehicle?: {
-    id: number;
-    plate: string;
-    brand: string;
-    model: string;
-  };
-  inventories: VehiclePartInventoryType[];
+  createdAt?: string;
 }
 
 export interface VehiclePartPayload {
@@ -100,16 +92,14 @@ const fetchVehicleParts = async (
     if (name) filters.push(`name=${name}`);
     if (brand) filters.push(`brand=${brand}`);
     if (model) filters.push(`model=${model}`);
-    if (selectedVehicle) filters.push(`vehicleId=${selectedVehicle}`);
-
-    const query = [
-      `page=${page}`,
+    if (selectedVehicle) filters.push(`vehicleId=${selectedVehicle}`);    const query = [
+      `page=${page - 1}`, // Convert from UI pagination (1-based) to API pagination (0-based)
       `size=${size}`,
       `sort=${sortField},${sortOrder}`,
       ...filters,
     ].join('&');
 
-    const response = await fetch(`${API_BASE_URL}/vehicle-parts?${query}`, {
+    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts?${query}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -141,7 +131,7 @@ const deleteVehiclePart = async (id: number) => {
   try {
     const token = localStorage.getItem('authToken');
 
-    const response = await fetch(`${API_BASE_URL}/vehicle-parts/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -171,7 +161,7 @@ const saveInventoryRow = async (partId: number, updatedRow: VehiclePartInventory
   try {
     const token = localStorage.getItem('authToken');
 
-    const response = await fetch(`${API_BASE_URL}/vehicle-parts/${partId}/headquarters/${updatedRow.headquarterId}/stock`, {
+    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${partId}/headquarters/${updatedRow.headquarterId}/stock`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -203,8 +193,7 @@ const saveInventoryRow = async (partId: number, updatedRow: VehiclePartInventory
 export const VehiclePartsPage: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [vehicleParts, setVehicleParts] = useState<VehiclePartType[]>([]);
-  const [tableParams, setTableParams] = useState<TableParams>({
+  const [vehicleParts, setVehicleParts] = useState<VehiclePartType[]>([]);  const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
       current: 1,
       pageSize: 10,
@@ -226,9 +215,6 @@ export const VehiclePartsPage: React.FC = () => {
 
   // States for vehicles list (for filters and form)
   const [vehicles, setVehicles] = useState<{ id: number; plate: string; brand: string; model: string }[]>([]);
-
-  // Expanded rows state
-  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
 
   const debouncedFetch = debounce((
     page: number,
@@ -257,11 +243,9 @@ export const VehiclePartsPage: React.FC = () => {
     try {
       const result = await fetchVehicleParts(page, size, sortField, sortOrder, name, brand, model, selectedVehicle);
       
-      if (result.success && result.data) {
-        const formattedData = result.data.map((part: any) => ({
+      if (result.success && result.data) {        const formattedData = result.data.map((part: any) => ({
           ...part,
           key: part.id.toString(),
-          totalQuantity: part.inventories?.reduce((total: number, inv: any) => total + inv.quantity, 0) || 0,
         }));
         
         setVehicleParts(formattedData);
@@ -285,7 +269,7 @@ export const VehiclePartsPage: React.FC = () => {
   const loadVehicles = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/vehicle?page=1&size=1000&sort=plate,asc`, {
+      const response = await fetch(`${API_BASE_URL}/vehicle/findBy`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -363,8 +347,8 @@ export const VehiclePartsPage: React.FC = () => {
       model: vehiclePart.model,
       description: vehiclePart.description || '',
       notes: vehiclePart.notes || '',
-      vehicleId: vehiclePart.associatedVehicle?.id || undefined,
-      vehicleType: vehiclePart.vehicleType || undefined,
+      vehicleId: undefined, // Will be set in the form if needed
+      vehicleType: undefined, // Will be set in the form if needed
     });
     setIsModalVisible(true);
   };
@@ -429,14 +413,8 @@ export const VehiclePartsPage: React.FC = () => {
       key: 'actions',
       render: (_, record) => (
         <Dropdown
-          trigger={['click']}
-          menu={{
+          trigger={['click']}          menu={{
             items: [
-              {
-                key: 'view',
-                label: 'Ver detalles',
-                icon: <EyeOutlined style={{ color: '#1890ff' }} />,
-              },
               {
                 key: 'edit',
                 label: 'Editar',
@@ -447,17 +425,7 @@ export const VehiclePartsPage: React.FC = () => {
                 label: 'Eliminar',
                 icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
               },
-            ],
-            onClick: ({ key }) => {
-              if (key === 'view') {
-                // Toggle expand row
-                const isExpanded = expandedRowKeys.includes(record.key);
-                if (isExpanded) {
-                  setExpandedRowKeys(prev => prev.filter(k => k !== record.key));
-                } else {
-                  setExpandedRowKeys(prev => [...prev, record.key]);
-                }
-              }
+            ],onClick: ({ key }) => {
               if (key === 'edit') handleEdit(record);
               if (key === 'delete') handleDelete(record);
             },
@@ -466,6 +434,12 @@ export const VehiclePartsPage: React.FC = () => {
           <Button type="text">•••</Button>
         </Dropdown>
       ),
+    },    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      sorter: true,
+      width: 80,
     },
     {
       title: 'Nombre',
@@ -478,37 +452,25 @@ export const VehiclePartsPage: React.FC = () => {
       dataIndex: 'brand',
       key: 'brand',
       sorter: true,
-    },
-    {
+    },    {
       title: 'Modelo',
       dataIndex: 'model',
       key: 'model',
       sorter: true,
-    },
+    },    
     {
       title: 'Cantidad Total',
       dataIndex: 'totalQuantity',
       key: 'totalQuantity',
-      align: 'center',
-      render: (value) => <span style={{ fontWeight: 'bold' }}>{value}</span>,
-    },
-    {
+      render: () => '—', // Empty for now as requested
+    },{
       title: 'Vehículo Asociado',
       dataIndex: 'associatedVehicle',
       key: 'associatedVehicle',
-      render: (vehicle) => vehicle ? `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}` : 'N/A',    },
-  ];
+      render: () => '—', // Empty for now as requested
+    },
+];
 
-  const expandedRowRender = (record: VehiclePartType) => (
-    <div style={{ padding: '16px', backgroundColor: '#fafafa' }}>
-      <h4 style={{ marginBottom: '16px' }}>Inventario por Sede</h4>
-      <EditableInventorySubTable
-        inventories={record.inventories}
-        onChange={(updated) => handleInventoryUpdate(record.id, updated)}
-        onSaveRow={(updatedRow) => handleSaveInventoryRow(record.id, updatedRow)}
-      />
-    </div>
-  );
   return (
     <div style={{ padding: '24px' }} className="overflow-x-auto">
       <h1 className="h3 mb-3 text-gray-800">Partes de Vehículos</h1>
@@ -524,8 +486,7 @@ export const VehiclePartsPage: React.FC = () => {
         onCreateClick={handleCreate}
         vehicles={vehicles}
       />
-      
-      <Table
+        <Table
         columns={columns}
         dataSource={vehicleParts}
         pagination={{
@@ -537,12 +498,6 @@ export const VehiclePartsPage: React.FC = () => {
         }}
         loading={loading}
         onChange={handleTableChange}
-        expandable={{
-          expandedRowRender,
-          expandedRowKeys,
-          onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
-          rowExpandable: (record) => record.inventories && record.inventories.length > 0,
-        }}
         scroll={{ x: 800 }}
       />
 

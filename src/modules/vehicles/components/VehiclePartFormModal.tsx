@@ -115,7 +115,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
     try {
       const token = localStorage.getItem('authToken');
 
-      const response = await fetch(`${API_BASE_URL}/vehicle-parts`, {
+      const response = await fetch(`${API_BASE_URL}/api/vehicle-parts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
     try {
       const token = localStorage.getItem('authToken');
 
-      const response = await fetch(`${API_BASE_URL}/vehicle-parts/${payload.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${payload.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
