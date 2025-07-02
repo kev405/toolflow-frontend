@@ -50,9 +50,7 @@ export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySub
       if (!row) return;
 
       const updatedRow = { ...row, quantity: values.quantity };
-      setLoading(true);
-
-      if (onSaveRow) {
+      setLoading(true);      if (onSaveRow) {
         const result = await onSaveRow(updatedRow);
         if (result.success) {
           const newData = editingData.map(item =>
@@ -62,7 +60,7 @@ export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySub
           onChange?.(newData);
           setEditingKey(null);
           form.resetFields();
-          message.success('Inventario actualizado correctamente');
+          // Success message is handled by parent component
         } else {
           message.error(result.error || 'Error al actualizar inventario');
         }

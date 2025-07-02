@@ -479,7 +479,7 @@ export const VehiclePartsPage: React.FC = () => {
         
         // Find the first inventory with a vehicleId
         const inventoryWithVehicle = record.inventories.find(inv => inv.vehicleId);
-        if (!inventoryWithVehicle) return '—';
+        if (!inventoryWithVehicle) return '';
         
         // Find the vehicle info from the vehicles list
         const vehicle = vehicles.find(v => v.id === inventoryWithVehicle.vehicleId);
