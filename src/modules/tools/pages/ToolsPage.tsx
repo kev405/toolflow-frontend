@@ -34,6 +34,7 @@ export interface InventoryType {
   available: number;
   onLoan: number;
   damaged: number;
+  consumable: boolean;
   main: boolean;
 }
 
@@ -349,6 +350,10 @@ const ToolsPage = () => {
           available: tool.available || 0,
           damaged: tool.damaged || 0,
           onLoan: tool.onLoan || 0,
+          inventories: tool.inventories?.map((inv: InventoryType) => ({
+            ...inv,
+            consumable: tool.consumable,
+          })) || [],
         }));
 
         setData(formattedTools);
@@ -469,11 +474,11 @@ const ToolsPage = () => {
 
   const handleSubmit = async (values: ToolPayload) => {
     setLoading(true);
-  
+
     if (!values.consumable) {
       delete values.minimalRegistration;
     }
-  
+
     try {
       if (editingTool) {
         await handleEditTool(values);
@@ -499,7 +504,7 @@ const ToolsPage = () => {
         onLoan: updatedRow.onLoan
       }
     );
-  
+
     if (result.success) {
       message.success('Inventario actualizado correctamente');
       await loadTools();
@@ -560,30 +565,6 @@ const ToolsPage = () => {
       sorter: true,
     },
     {
-      title: 'Cantidad',
-      dataIndex: 'quantity',
-      key: 'quantity',
-      sorter: true,
-    },
-    {
-      title: 'Disponible',
-      dataIndex: 'available',
-      key: 'available',
-      sorter: true,
-    },
-    {
-      title: 'Averiado',
-      dataIndex: 'damaged',
-      key: 'damaged',
-      sorter: true,
-    },
-    {
-      title: 'En Préstamo',
-      dataIndex: 'onLoan',
-      key: 'onLoan',
-      sorter: true,
-    },
-    {
       title: 'Consumible',
       dataIndex: 'consumable',
       key: 'consumable',
@@ -634,21 +615,31 @@ const ToolsPage = () => {
         onChange={handleTableChange}
         expandable={{
           expandedRowRender: (record: ToolType) => (
-            <EditableInventorySubTable
-              inventories={record.inventories || []}
-              onChange={(updatedInventories) => {
-                setData(prev =>
-                  prev.map(tool =>
-                    tool.id === record.id
-                      ? { ...tool, inventories: updatedInventories }
-                      : tool
-                  )
-                );
+            <div
+              style={{
+                background: '#fafafa',
+                padding: '16px',
+                border: '1px solid #f0f0f0',
+                borderRadius: '4px',
+                margin: '8px 0'
               }}
-              onSaveRow={async (updatedRow) => {
-                return await handleSaveInventoryRow(record.id, updatedRow);
-              }}
-            />
+            >
+              <EditableInventorySubTable
+                inventories={record.inventories || []}
+                onChange={(updatedInventories) => {
+                  setData(prev =>
+                    prev.map(tool =>
+                      tool.id === record.id
+                        ? { ...tool, inventories: updatedInventories }
+                        : tool
+                    )
+                  );
+                }}
+                onSaveRow={async (updatedRow) => {
+                  return await handleSaveInventoryRow(record.id, updatedRow);
+                }}
+              />
+            </div>
           )
         }}
       />
