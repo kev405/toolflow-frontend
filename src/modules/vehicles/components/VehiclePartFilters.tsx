@@ -83,13 +83,14 @@ export const VehiclePartFilters: React.FC<VehiclePartFiltersProps> = ({
           </Row>
         </Col>
         <Col xs={24} md={4}>
-          <div style={{ textAlign: 'right' }}>            <Button
+          <div style={{ textAlign: 'right' }}>
+            <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={onCreateClick}
               style={{ width: '100%' }}
             >
-              Nueva Parte
+              Crear Parte
             </Button>
           </div>
         </Col>

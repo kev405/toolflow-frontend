@@ -504,7 +504,8 @@ export const VehiclePartsPage: React.FC = () => {
         onSelectedVehicleChange={setSelectedVehicle}
         onCreateClick={handleCreate}
         vehicles={vehicles}
-      />        <Table
+      />
+      <Table
         columns={columns}
         dataSource={vehicleParts}
         pagination={{
@@ -516,7 +517,6 @@ export const VehiclePartsPage: React.FC = () => {
         }}
         loading={loading}
         onChange={handleTableChange}
-        scroll={{ x: 800 }}
         expandable={{
           expandedRowRender: (record: VehiclePartType) => (
             <EditableInventorySubTable
@@ -538,7 +538,6 @@ export const VehiclePartsPage: React.FC = () => {
           rowExpandable: (record) => !!(record.inventories && record.inventories.length > 0),
         }}
       />
-
       <VehiclePartFormModal
         visible={isModalVisible}
         vehiclePart={editingVehiclePart}

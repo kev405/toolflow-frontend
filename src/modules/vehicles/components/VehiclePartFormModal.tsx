@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, message, Checkbox, InputNumber } from 'antd';
+import { Modal, Form, Input, Select, message, InputNumber, Checkbox } from 'antd';
+
+const { TextArea } = Input;
 import { VehiclePartPayload } from '../pages/VehiclePartsPage';
 import { API_BASE_URL } from '../../../config';
 
-const { TextArea } = Input;
 const { Option } = Select;
 
 interface VehiclePartFormModalProps {
@@ -14,27 +15,21 @@ interface VehiclePartFormModalProps {
   onCancel: () => void;
 }
 
-const VEHICLE_TYPES = [
-  { value: 'car', label: 'Automóvil', icon: 'car' },
-  { value: 'motorcycle', label: 'Motocicleta', icon: 'motorcycle' },
-  { value: 'truck', label: 'Camión', icon: 'truck' },
-  { value: 'van', label: 'Camioneta', icon: 'shuttle-van' },
-];
-
 export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
   visible,
   vehiclePart,
   vehicles,
   onSave,
   onCancel,
-}) => {  const [form] = Form.useForm();
+}) => {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [isAssociatedToVehicle, setIsAssociatedToVehicle] = useState(false);
 
   useEffect(() => {
     if (visible && vehiclePart) {
-      const isAssociated = !!vehiclePart.vehicleId;
-      setIsAssociatedToVehicle(isAssociated);
+      const hasVehicleId = !!vehiclePart.vehicleId;
+      setIsAssociatedToVehicle(hasVehicleId);
       
       form.setFieldsValue({
         name: vehiclePart.name,
@@ -42,25 +37,16 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
         model: vehiclePart.model,
         description: vehiclePart.description || '',
         notes: vehiclePart.notes || '',
-        quantity: vehiclePart.quantity || 1,
-        isAssociatedToVehicle: isAssociated,
+        quantity: vehiclePart.quantity || 0,
+        isAssociatedToVehicle: hasVehicleId,
         vehicleId: vehiclePart.vehicleId,
         vehicleType: vehiclePart.vehicleType,
       });
     } else if (visible) {
-      setIsAssociatedToVehicle(false);
       form.resetFields();
+      setIsAssociatedToVehicle(false);
     }
   }, [visible, vehiclePart, form]);
-  const handleAssociationChange = (checked: boolean) => {
-    setIsAssociatedToVehicle(checked);
-    // Clear the other field when switching
-    if (checked) {
-      form.setFieldValue('vehicleType', undefined);
-    } else {
-      form.setFieldValue('vehicleId', undefined);
-    }
-  };
 
   const handleSubmit = async () => {
     try {
@@ -73,19 +59,12 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
         model: values.model,
         description: values.description || '',
         notes: values.notes || '',
+        quantity: values.quantity || 0,
+        vehicleId: values.isAssociatedToVehicle ? values.vehicleId : null,
+        vehicleType: values.isAssociatedToVehicle ? null : values.vehicleType,
       };
 
-      // Add specific fields based on whether it's associated with a vehicle or not
-      if (values.isAssociatedToVehicle) {
-        payload.vehicleId = values.vehicleId;
-      } else {
-        payload.vehicleType = values.vehicleType;
-      }
-
-      // Add quantity only for creation
-      if (!vehiclePart?.id) {
-        payload.quantity = values.quantity;
-      } else {
+      if (vehiclePart?.id) {
         payload.id = vehiclePart.id;
       }
 
@@ -184,7 +163,8 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
       okText="Guardar"
       cancelText="Cancelar"
       width={600}
-    >      <Form
+    >
+      <Form
         form={form}
         layout="vertical"
         requiredMark={false}
@@ -223,7 +203,9 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
           ]}
         >
           <Input placeholder="Ej: S4015, Energy XM2, 128000-2980" />
-        </Form.Item>        <Form.Item
+        </Form.Item>
+
+        <Form.Item
           name="description"
           label="Descripción (Opcional)"
           rules={[
@@ -231,8 +213,8 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
           ]}
         >
           <TextArea
-            rows={2}
-            placeholder="Descripción de la parte..."
+            rows={3}
+            placeholder="Descripción adicional de la parte..."
           />
         </Form.Item>
 
@@ -244,42 +226,57 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
           ]}
         >
           <TextArea
-            rows={2}
+            rows={3}
             placeholder="Observaciones adicionales..."
           />
         </Form.Item>
 
-        {/* Cantidad inicial - solo visible en creación */}
+        {/* Campo de cantidad solo para creación */}
         {!vehiclePart?.id && (
           <Form.Item
             name="quantity"
             label="Cantidad Inicial"
             rules={[
               { required: true, message: 'Por favor ingrese la cantidad inicial' },
-              { type: 'number', min: 1, message: 'La cantidad debe ser mayor a 0' },
+              { type: 'number', min: 0, message: 'La cantidad debe ser mayor o igual a 0' },
             ]}
           >
             <InputNumber
-              min={1}
+              min={0}
+              placeholder="0"
               style={{ width: '100%' }}
-              placeholder="Cantidad inicial de la parte"
+              addonAfter="unidades"
             />
           </Form.Item>
-        )}        {/* Checkbox para asociar con vehículo */}
-        <Form.Item
-          name="isAssociatedToVehicle"
-          valuePropName="checked"
-        >
-          <Checkbox onChange={(e) => handleAssociationChange(e.target.checked)}>
-            ¿Parte asociada a un vehículo específico?
-          </Checkbox>
-        </Form.Item>
+        )}
 
-        {/* Campos condicionales según el checkbox */}
-        {isAssociatedToVehicle ? (
+        {/* Checkbox para asociar a vehículo - solo en creación */}
+        {!vehiclePart?.id && (
+          <Form.Item
+            name="isAssociatedToVehicle"
+            valuePropName="checked"
+          >
+            <Checkbox
+              onChange={(e) => {
+                setIsAssociatedToVehicle(e.target.checked);
+                // Limpiar campos relacionados cuando cambie el checkbox
+                if (e.target.checked) {
+                  form.setFieldValue('vehicleType', undefined);
+                } else {
+                  form.setFieldValue('vehicleId', undefined);
+                }
+              }}
+            >
+              ¿Parte asociada a un vehículo específico?
+            </Checkbox>
+          </Form.Item>
+        )}
+
+        {/* Selector de vehículo - solo si está marcado el checkbox y en creación */}
+        {!vehiclePart?.id && isAssociatedToVehicle && (
           <Form.Item
             name="vehicleId"
-            label="Vehículo Asociado"
+            label="Vehículo"
             rules={[
               { required: true, message: 'Por favor seleccione un vehículo' },
             ]}
@@ -297,7 +294,10 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
               ))}
             </Select>
           </Form.Item>
-        ) : (
+        )}
+
+        {/* Selector de tipo de vehículo - solo si NO está marcado el checkbox y en creación */}
+        {!vehiclePart?.id && !isAssociatedToVehicle && (
           <Form.Item
             name="vehicleType"
             label="Tipo de Vehículo"
@@ -306,15 +306,28 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             ]}
           >
             <Select placeholder="Seleccione el tipo de vehículo">
-              {VEHICLE_TYPES.map((type) => (
-                <Option key={type.value} value={type.value}>
-                  <i className={`fas fa-${type.icon}`} style={{ marginRight: 8 }} />
-                  {type.label}
-                </Option>
-              ))}
+              <Option value="car">
+                <i className="fas fa-car" style={{ marginRight: 8 }} />
+                Automóvil
+              </Option>
+              <Option value="motorcycle">
+                <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
+                Motocicleta
+              </Option>
+              <Option value="truck">
+                <i className="fas fa-truck" style={{ marginRight: 8 }} />
+                Camión
+              </Option>
+              <Option value="bus">
+                <i className="fas fa-bus" style={{ marginRight: 8 }} />
+                Bus
+              </Option>
             </Select>
           </Form.Item>
         )}
+
+        {/* Para edición - mostrar información de asociación pero sin permitir cambios */}
+        {/* Removido: No mostrar asociación actual en edición */}
       </Form>
     </Modal>
   );
