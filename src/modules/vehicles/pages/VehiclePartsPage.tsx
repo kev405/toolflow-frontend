@@ -84,7 +84,8 @@ const fetchVehicleParts = async (
   name?: string,
   brand?: string,
   model?: string,
-  selectedVehicle?: number | null
+  selectedVehicle?: number | null,
+  selectedHeadquarter?: number | null
 ) => {
   try {
     const token = localStorage.getItem('authToken');
@@ -93,7 +94,10 @@ const fetchVehicleParts = async (
     if (name) filters.push(`name=${name}`);
     if (brand) filters.push(`brand=${brand}`);
     if (model) filters.push(`model=${model}`);
-    if (selectedVehicle) filters.push(`vehicleId=${selectedVehicle}`);    const query = [
+    if (selectedVehicle) filters.push(`vehicleId=${selectedVehicle}`);
+    if (selectedHeadquarter) filters.push(`headquarterId=${selectedHeadquarter}`);
+
+    const query = [
       `page=${page - 1}`, // Convert from UI pagination (1-based) to API pagination (0-based)
       `size=${size}`,
       `sort=${sortField},${sortOrder}`,
@@ -191,6 +195,28 @@ const saveInventoryRow = async (partId: number, updatedRow: VehiclePartInventory
   }
 };
 
+const fetchHeadquarters = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/headquarters/all`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al obtener sedes');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching headquarters:', error);
+    return [];
+  }
+};
+
 export const VehiclePartsPage: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -213,9 +239,11 @@ export const VehiclePartsPage: React.FC = () => {
   const [searchBrand, setSearchBrand] = useState('');
   const [searchModel, setSearchModel] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<number | null>(null);
+  const [selectedHeadquarter, setSelectedHeadquarter] = useState<number | null>(null);
 
   // States for vehicles list (for filters and form)
   const [vehicles, setVehicles] = useState<{ id: number; plate: string; brand: string; model: string }[]>([]);
+  const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
 
   const debouncedFetch = debounce((
     page: number,
@@ -225,9 +253,10 @@ export const VehiclePartsPage: React.FC = () => {
     name?: string,
     brand?: string,
     model?: string,
-    selectedVehicle?: number | null
+    selectedVehicle?: number | null,
+    selectedHeadquarter?: number | null
   ) => {
-    loadVehicleParts(page, size, sortField, sortOrder, name, brand, model, selectedVehicle);
+    loadVehicleParts(page, size, sortField, sortOrder, name, brand, model, selectedVehicle, selectedHeadquarter);
   }, 300);
 
   const loadVehicleParts = async (
@@ -238,11 +267,12 @@ export const VehiclePartsPage: React.FC = () => {
     name?: string,
     brand?: string,
     model?: string,
-    selectedVehicle?: number | null
+    selectedVehicle?: number | null,
+    selectedHeadquarter?: number | null
   ) => {
     setLoading(true);
     try {
-      const result = await fetchVehicleParts(page, size, sortField, sortOrder, name, brand, model, selectedVehicle);
+      const result = await fetchVehicleParts(page, size, sortField, sortOrder, name, brand, model, selectedVehicle, selectedHeadquarter);
       
       if (result.success && result.data) {        const formattedData = result.data.map((part: any) => ({
           ...part,
@@ -292,9 +322,20 @@ export const VehiclePartsPage: React.FC = () => {
     }
   };
 
+  const loadHeadquarters = async () => {
+    try {
+      const headquarters = await fetchHeadquarters();
+      setHeadquarters(headquarters);
+    } catch (error) {
+      console.error('Error loading headquarters:', error);
+      message.error('Error al cargar las sedes');
+    }
+  };
+
   useEffect(() => {
     loadVehicleParts();
     loadVehicles();
+    loadHeadquarters();
   }, []);
 
   useEffect(() => {
@@ -306,9 +347,10 @@ export const VehiclePartsPage: React.FC = () => {
       searchName,
       searchBrand,
       searchModel,
-      selectedVehicle
+      selectedVehicle,
+      selectedHeadquarter
     );
-  }, [searchName, searchBrand, searchModel, selectedVehicle]);
+  }, [searchName, searchBrand, searchModel, selectedVehicle, selectedHeadquarter]);
 
   const handleTableChange = (pagination: any, _filters: any, sorter: any) => {
     const sortField = sorter.field || 'name';
@@ -333,7 +375,8 @@ export const VehiclePartsPage: React.FC = () => {
       searchName,
       searchBrand,
       searchModel,
-      selectedVehicle
+      selectedVehicle,
+      selectedHeadquarter
     );
   };
 
@@ -498,12 +541,15 @@ export const VehiclePartsPage: React.FC = () => {
         searchBrand={searchBrand}
         searchModel={searchModel}
         selectedVehicle={selectedVehicle}
+        selectedHeadquarter={selectedHeadquarter}
         onSearchNameChange={setSearchName}
         onSearchBrandChange={setSearchBrand}
         onSearchModelChange={setSearchModel}
         onSelectedVehicleChange={setSelectedVehicle}
+        onSelectedHeadquarterChange={setSelectedHeadquarter}
         onCreateClick={handleCreate}
         vehicles={vehicles}
+        headquarters={headquarters}
       />
       <Table
         columns={columns}
