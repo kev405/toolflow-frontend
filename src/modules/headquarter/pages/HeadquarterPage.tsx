@@ -362,15 +362,7 @@ const HeadquartersPage = () => {
       dataIndex: ['responsible', 'fullName'],
       key: 'responsible',
       render: (value: string) => value || '—',
-    },
-    {
-      title: 'Estado',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: boolean) => (
-        <Tag color={status ? 'green' : 'red'}>{status ? 'ACTIVO' : 'INACTIVO'}</Tag>
-      ),
-    },
+    }
   ];
 
   const handleTableChange = (paginationInfo: any, _filters: any, sorter: any) => {
@@ -440,7 +432,6 @@ const HeadquartersPage = () => {
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1 className="h3 mb-3 text-gray-800">Sedes</h1>
       <HeadquarterFilters onCreateClick={
         () => {
           setOpenModal(true);

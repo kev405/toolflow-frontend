@@ -501,7 +501,6 @@ const VehiclesPage = () => {
 
   return (
     <div style={{ padding: '24px' }} className="overflow-x-auto">
-      <h1 className="h3 mb-3 text-gray-800">Vehículos</h1>
       <VehicleFilters
         searchVehicleType={searchVehicleType}
         searchPlate={searchPlate}

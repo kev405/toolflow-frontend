@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, InputNumber, Form, Button, Space, Spin, message } from 'antd';
+import { Table, InputNumber, Form, Button, Space, Spin, message, Typography, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
 	EditOutlined,
@@ -23,6 +23,9 @@ export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySub
 	const [editingKey, setEditingKey] = useState<number | null>(null);
 	const [editingData, setEditingData] = useState(inventories);
 	const [loading, setLoading] = useState<number | null>(null);
+
+	const { token } = theme.useToken();       // 🎨 colorPrimario dinámico
+
 
 	useEffect(() => {
 		setEditingData(inventories);
@@ -114,7 +117,7 @@ export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySub
 						</Form.Item>
 					</Form>
 				) : (
-					<span style={{ fontWeight: 'bold' }}>{value?.toLocaleString() || 0}</span>
+					<span>{value?.toLocaleString() || 0}</span>
 				),
 		},
 		{
@@ -122,50 +125,50 @@ export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySub
 			key: 'actions',
 			width: '20%',
 			render: (_, record) => {
-				const editable = isEditing(record);
+				const editable  = isEditing(record);
 				const isLoading = loading === record.headquarterId;
-				
+		
 				return editable ? (
 					<Space>
 						<Button
-							type="link"
 							icon={isLoading ? <Spin size="small" /> : <SaveOutlined />}
+							type="primary"
+							style={{ background: '#26B857', borderColor: '#26B857' }}  // mismo verde ✔️
 							onClick={() => saveEdit(record.headquarterId)}
-							size="small"
 							disabled={isLoading}
-						>
-							{isLoading ? 'Guardando...' : 'Guardar'}
-						</Button>
+						/>
 						<Button
-							type="link"
-							icon={<CloseOutlined />}
+							icon={<CloseOutlined />}        // rojo ✔️
+							danger
 							onClick={cancelEdit}
-							size="small"
 							disabled={isLoading}
-						>
-							Cancelar
-						</Button>
+						/>
 					</Space>
 				) : (
 					<Button
-						type="link"
 						icon={<EditOutlined />}
 						onClick={() => startEdit(record)}
-						size="small"
-					>
-						Editar
-					</Button>
+					/>
 				);
 			},
 		},
+		
 	];
 
 	return (
 		<div style={{ padding: '16px', backgroundColor: '#fafafa' }}>
-			<h4 style={{ marginBottom: '16px', color: '#1890ff' }}>
+			<Typography.Title
+				level={5}
+				style={{
+					margin: '0 0 12px',
+					color: token.colorPrimary,
+					fontWeight: 600,
+					fontSize: 14,
+				}}
+			>
 				<i className="fas fa-warehouse" style={{ marginRight: 8 }} />
-				Inventario por Sede
-			</h4>
+				Inventario&nbsp;por&nbsp;Sede
+			</Typography.Title>
 			<Table
 				components={{
 					body: {

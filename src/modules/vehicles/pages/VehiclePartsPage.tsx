@@ -242,7 +242,7 @@ export const VehiclePartsPage: React.FC = () => {
   const [selectedHeadquarter, setSelectedHeadquarter] = useState<number | null>(null);
 
   // States for vehicles list (for filters and form)
-  const [vehicles, setVehicles] = useState<{ id: number; plate: string; brand: string; model: string }[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: number; name: string; vehicle_type?: string;}[]>([]);
   const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
 
   const debouncedFetch = debounce((
@@ -300,7 +300,7 @@ export const VehiclePartsPage: React.FC = () => {
   const loadVehicles = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/vehicle/findBy`, {
+      const response = await fetch(`${API_BASE_URL}/vehicle/all`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -309,12 +309,12 @@ export const VehiclePartsPage: React.FC = () => {
       });
 
       const data = await response.json();
-      if (response.ok && data.content) {
-        setVehicles(data.content.map((vehicle: any) => ({
+      console.log('Vehicles data:', data);
+      if (response.ok) {
+        setVehicles(data.map((vehicle: any) => ({
           id: vehicle.id,
-          plate: vehicle.plate,
-          brand: vehicle.brand,
-          model: vehicle.model,
+          name: vehicle.name,
+          vehicle_type: vehicle.vehicle_type || "",
         })));
       }
     } catch (error) {
@@ -528,14 +528,13 @@ export const VehiclePartsPage: React.FC = () => {
         const vehicle = vehicles.find(v => v.id === inventoryWithVehicle.vehicleId);
         if (!vehicle) return `Vehículo ID: ${inventoryWithVehicle.vehicleId}`;
         
-        return `${vehicle.plate} (${vehicle.brand} ${vehicle.model})`;
+        return `${vehicle.name})`;
       },
     },
 ];
 
   return (
     <div style={{ padding: '24px' }} className="overflow-x-auto">
-      <h1 className="h3 mb-3 text-gray-800">Partes de Vehículos</h1>
       <VehiclePartFilters
         searchName={searchName}
         searchBrand={searchBrand}

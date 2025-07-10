@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, message, InputNumber, Checkbox } from 'antd';
+import { Modal, Form, Input, Select, message, InputNumber, Checkbox, Row, Col, Button } from 'antd';
 
 const { TextArea } = Input;
 import { VehiclePartPayload } from '../pages/VehiclePartsPage';
@@ -10,7 +10,7 @@ const { Option } = Select;
 interface VehiclePartFormModalProps {
   visible: boolean;
   vehiclePart: VehiclePartPayload | null;
-  vehicles: { id: number; plate: string; brand: string; model: string }[];
+  vehicles: { id: number; name: string; vehicle_type?: string;}[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -30,7 +30,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
     if (visible && vehiclePart) {
       const hasVehicleId = !!vehiclePart.vehicleId;
       setIsAssociatedToVehicle(hasVehicleId);
-      
+
       form.setFieldsValue({
         name: vehiclePart.name,
         brand: vehiclePart.brand,
@@ -157,169 +157,170 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
     <Modal
       title={vehiclePart?.id ? 'Editar Parte de Vehículo' : 'Crear Parte de Vehículo'}
       open={visible}
-      onOk={handleSubmit}
       onCancel={handleCancel}
-      confirmLoading={loading}
-      okText="Guardar"
-      cancelText="Cancelar"
-      width={600}
+      footer={[
+        <div className="d-flex justify-content-center mt-4" key="footer">
+          <Button
+            type="primary"
+            htmlType="submit"
+            form="vehicle-part-form"
+            loading={loading}
+            style={{ width: '50%' }}
+          >
+            Guardar
+          </Button>
+        </div>,
+      ]}
+      width={800}
     >
       <Form
+        id="vehicle-part-form"
         form={form}
         layout="vertical"
         requiredMark={false}
+        onFinish={handleSubmit}
       >
-        <Form.Item
-          name="name"
-          label="Nombre"
-          rules={[
-            { required: true, message: 'Por favor ingrese el nombre de la parte' },
-            { min: 2, message: 'El nombre debe tener al menos 2 caracteres' },
-            { max: 100, message: 'El nombre no puede exceder 100 caracteres' },
-          ]}
-        >
-          <Input placeholder="Ej: Batería, Llantas, Motor de arranque" />
-        </Form.Item>
-
-        <Form.Item
-          name="brand"
-          label="Marca"
-          rules={[
-            { required: true, message: 'Por favor ingrese la marca' },
-            { min: 2, message: 'La marca debe tener al menos 2 caracteres' },
-            { max: 50, message: 'La marca no puede exceder 50 caracteres' },
-          ]}
-        >
-          <Input placeholder="Ej: Bosch, Michelin, Denso" />
-        </Form.Item>
-
-        <Form.Item
-          name="model"
-          label="Modelo"
-          rules={[
-            { required: true, message: 'Por favor ingrese el modelo' },
-            { min: 1, message: 'El modelo debe tener al menos 1 caracter' },
-            { max: 50, message: 'El modelo no puede exceder 50 caracteres' },
-          ]}
-        >
-          <Input placeholder="Ej: S4015, Energy XM2, 128000-2980" />
-        </Form.Item>
-
-        <Form.Item
-          name="description"
-          label="Descripción (Opcional)"
-          rules={[
-            { max: 500, message: 'La descripción no puede exceder 500 caracteres' },
-          ]}
-        >
-          <TextArea
-            rows={3}
-            placeholder="Descripción adicional de la parte..."
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="notes"
-          label="Observaciones (Opcional)"
-          rules={[
-            { max: 500, message: 'Las observaciones no pueden exceder 500 caracteres' },
-          ]}
-        >
-          <TextArea
-            rows={3}
-            placeholder="Observaciones adicionales..."
-          />
-        </Form.Item>
-
-        {/* Campo de cantidad solo para creación */}
-        {!vehiclePart?.id && (
-          <Form.Item
-            name="quantity"
-            label="Cantidad Inicial"
-            rules={[
-              { required: true, message: 'Por favor ingrese la cantidad inicial' },
-              { type: 'number', min: 0, message: 'La cantidad debe ser mayor o igual a 0' },
-            ]}
-          >
-            <InputNumber
-              min={0}
-              placeholder="0"
-              style={{ width: '100%' }}
-              addonAfter="unidades"
-            />
-          </Form.Item>
-        )}
-
-        {/* Checkbox para asociar a vehículo - solo en creación */}
-        {!vehiclePart?.id && (
-          <Form.Item
-            name="isAssociatedToVehicle"
-            valuePropName="checked"
-          >
-            <Checkbox
-              onChange={(e) => {
-                setIsAssociatedToVehicle(e.target.checked);
-                // Limpiar campos relacionados cuando cambie el checkbox
-                if (e.target.checked) {
-                  form.setFieldValue('vehicleType', undefined);
-                } else {
-                  form.setFieldValue('vehicleId', undefined);
-                }
-              }}
+        {/* -------- FILA 1 -------- */}
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="name"
+              label="Nombre"
+              rules={[
+                { required: true, message: 'Por favor ingrese el nombre' },
+                { min: 2, max: 100 },
+              ]}
             >
-              ¿Parte asociada a un vehículo específico?
-            </Checkbox>
-          </Form.Item>
+              <Input placeholder="Ej: Batería" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="brand"
+              label="Marca"
+              rules={[
+                { required: true, message: 'Por favor ingrese la marca' },
+                { min: 2, max: 50 },
+              ]}
+            >
+              <Input placeholder="Ej: Bosch" />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item
+              name="model"
+              label="Modelo"
+              rules={[
+                { required: true, message: 'Por favor ingrese el modelo' },
+                { min: 1, max: 50 },
+              ]}
+            >
+              <Input placeholder="Ej: S4015" />
+            </Form.Item>
+          </Col>
+          {!vehiclePart?.id && (
+            <Col xs={24} md={12}>
+              <Form.Item
+                name="quantity"
+                label="Cantidad Inicial"
+                rules={[
+                  { required: true, message: 'Ingrese la cantidad' },
+                  { type: 'number', min: 0 },
+                ]}
+              >
+                <InputNumber min={0} style={{ width: '100%' }} addonAfter="unidades" />
+              </Form.Item>
+            </Col>
+          )}
+        </Row>
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item
+              name="description"
+              label="Descripción (Opcional)"
+              rules={[{ max: 500 }]}
+            >
+              <TextArea rows={3} placeholder="Descripción adicional..." />
+            </Form.Item>
+          </Col>
+          <Col span={24}>
+            <Form.Item
+              name="notes"
+              label="Observaciones (Opcional)"
+              rules={[{ max: 500 }]}
+            >
+              <TextArea rows={3} placeholder="Observaciones..." />
+            </Form.Item>
+          </Col>
+        </Row>
+        {!vehiclePart?.id && (
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item name="isAssociatedToVehicle" valuePropName="checked">
+                <Checkbox
+                  onChange={(e) => {
+                    setIsAssociatedToVehicle(e.target.checked);
+                    if (e.target.checked) {
+                      form.setFieldValue('vehicleType', undefined);
+                    } else {
+                      form.setFieldValue('vehicleId', undefined);
+                    }
+                  }}
+                >
+                  ¿Parte asociada a un vehículo específico?
+                </Checkbox>
+              </Form.Item>
+            </Col>
+          </Row>
         )}
-
-        {/* Selector de vehículo - solo si está marcado el checkbox y en creación */}
         {!vehiclePart?.id && isAssociatedToVehicle && (
-          <Form.Item
-            name="vehicleId"
-            label="Vehículo"
-            rules={[
-              { required: true, message: 'Por favor seleccione un vehículo' },
-            ]}
-          >
-            <Select
-              placeholder="Seleccione un vehículo"
-              showSearch
-              optionFilterProp="children"
-            >
-              {vehicles.map((vehicle) => (
-                <Option key={vehicle.id} value={vehicle.id}>
-                  <i className="fas fa-car" style={{ marginRight: 8 }} />
-                  {vehicle.plate} - {vehicle.brand} {vehicle.model}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="vehicleId"
+                label="Vehículo"
+                rules={[{ required: true, message: 'Seleccione un vehículo' }]}
+              >
+                <Select
+                  placeholder="Seleccione un vehículo"
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {vehicles.map((v) => (
+                    <Option key={v.id} value={v.id}>
+                      <i className="fas fa-car" style={{ marginRight: 8 }} />
+                      {v.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
         )}
-
-        {/* Selector de tipo de vehículo - solo si NO está marcado el checkbox y en creación */}
         {!vehiclePart?.id && !isAssociatedToVehicle && (
-          <Form.Item
-            name="vehicleType"
-            label="Tipo de Vehículo"
-            rules={[
-              { required: true, message: 'Por favor seleccione el tipo de vehículo' },
-            ]}
-          >
-            <Select placeholder="Seleccione el tipo de vehículo">
-              <Option value="car">
-                <i className="fas fa-car" style={{ marginRight: 8 }} />
-                Automóvil
-              </Option>
-              <Option value="motorcycle">
-                <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
-                Motocicleta
-              </Option>
-            </Select>
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="vehicleType"
+                label="Tipo de Vehículo"
+                rules={[{ required: true, message: 'Seleccione el tipo de vehículo' }]}
+              >
+                <Select placeholder="Seleccione el tipo de vehículo">
+                  <Option value="car">
+                    <i className="fas fa-car" style={{ marginRight: 8 }} />
+                    Automóvil
+                  </Option>
+                  <Option value="motorcycle">
+                    <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
+                    Motocicleta
+                  </Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
         )}
-
-        {/* Para edición - mostrar información de asociación pero sin permitir cambios */}
-        {/* Removido: No mostrar asociación actual en edición */}
       </Form>
     </Modal>
   );
