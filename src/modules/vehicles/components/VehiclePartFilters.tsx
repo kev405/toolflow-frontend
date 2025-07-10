@@ -40,58 +40,59 @@ export const VehiclePartFilters: React.FC<VehiclePartFiltersProps> = ({
       <Row gutter={[16, 16]} align="middle" wrap>
         <Col xs={24} md={20}>
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} md={5}>
+            <Col xs={24} sm={12} md={6}>
               <Input
-                placeholder="Buscar por nombre"
+                placeholder="Nombre de parte"
                 value={searchName}
                 onChange={(e) => onSearchNameChange(e.target.value)}
-                prefix={<SearchOutlined />}
+                suffix={<SearchOutlined style={{ color: '#999' }} />}
                 allowClear
               />
             </Col>
-            <Col xs={24} sm={12} md={5}>
+            <Col xs={24} sm={12} md={6}>
               <Input
-                placeholder="Buscar por marca"
+                placeholder="Marca"
                 value={searchBrand}
                 onChange={(e) => onSearchBrandChange(e.target.value)}
-                prefix={<SearchOutlined />}
+                suffix={<SearchOutlined style={{ color: '#999' }} />}
                 allowClear
               />
             </Col>
-            <Col xs={24} sm={12} md={5}>
+
+            <Col xs={24} sm={12} md={6}>
               <Input
-                placeholder="Buscar por modelo"
+                placeholder="Modelo"
                 value={searchModel}
                 onChange={(e) => onSearchModelChange(e.target.value)}
-                prefix={<SearchOutlined />}
+                suffix={<SearchOutlined style={{ color: '#999' }} />}
                 allowClear
               />
             </Col>
-            <Col xs={24} sm={12} md={4}>
+            <Col xs={24} sm={12} md={6}>
               {onSelectedVehicleChange && (
                 <Select
                   placeholder="Vehículo"
-                  value={selectedVehicle || undefined}
+                  value={selectedVehicle ?? undefined}
                   onChange={onSelectedVehicleChange}
                   allowClear
                   style={{ width: '100%' }}
                   showSearch
                   optionFilterProp="children"
                 >
-                  {vehicles.map((vehicle) => (
-                    <Option key={vehicle.id} value={vehicle.id}>
+                  {vehicles.map((v) => (
+                    <Option key={v.id} value={v.id}>
                       <i className="fas fa-car" style={{ marginRight: 8 }} />
-                      {vehicle.plate} - {vehicle.brand} {vehicle.model}
+                      {v.plate} • {v.brand} {v.model}
                     </Option>
                   ))}
                 </Select>
               )}
             </Col>
-            <Col xs={24} sm={12} md={5}>
+            <Col xs={24} sm={12} md={6}>
               {onSelectedHeadquarterChange && (
                 <Select
                   placeholder="Sede"
-                  value={selectedHeadquarter || undefined}
+                  value={selectedHeadquarter ?? undefined}
                   onChange={onSelectedHeadquarterChange}
                   allowClear
                   style={{ width: '100%' }}
@@ -106,17 +107,15 @@ export const VehiclePartFilters: React.FC<VehiclePartFiltersProps> = ({
             </Col>
           </Row>
         </Col>
-        <Col xs={24} md={4}>
-          <div style={{ textAlign: 'right' }}>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={onCreateClick}
-              style={{ width: '100%' }}
-            >
-              Crear Parte
-            </Button>
-          </div>
+        <Col xs={24} md={4} style={{ textAlign: 'right' }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={onCreateClick}
+            style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
+          >
+            Crear Parte
+          </Button>
         </Col>
       </Row>
     </div>

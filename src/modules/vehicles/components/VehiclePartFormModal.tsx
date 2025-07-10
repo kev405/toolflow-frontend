@@ -314,14 +314,6 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
                 <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
                 Motocicleta
               </Option>
-              <Option value="truck">
-                <i className="fas fa-truck" style={{ marginRight: 8 }} />
-                Camión
-              </Option>
-              <Option value="bus">
-                <i className="fas fa-bus" style={{ marginRight: 8 }} />
-                Bus
-              </Option>
             </Select>
           </Form.Item>
         )}

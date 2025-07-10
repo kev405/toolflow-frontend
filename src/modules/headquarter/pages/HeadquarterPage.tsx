@@ -453,7 +453,13 @@ const HeadquartersPage = () => {
         dataSource={data}
         rowKey="id"
         loading={loading}
-        pagination={pagination}
+        pagination={{
+          ...pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} de ${total} elementos`,
+        }}
         onChange={handleTableChange}
       />
       <HeadquarterFormModal

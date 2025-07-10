@@ -565,21 +565,31 @@ export const VehiclePartsPage: React.FC = () => {
         onChange={handleTableChange}
         expandable={{
           expandedRowRender: (record: VehiclePartType) => (
-            <EditableInventorySubTable
-              inventories={record.inventories || []}
-              onChange={(updatedInventories) => {
-                setVehicleParts(prev =>
-                  prev.map(part =>
-                    part.id === record.id
-                      ? { ...part, inventories: updatedInventories }
-                      : part
-                  )
-                );
+            <div
+              style={{
+                background: '#fafafa',
+                padding: '16px',
+                border: '1px solid #f0f0f0',
+                borderRadius: '4px',
+                margin: '8px 0'
               }}
-              onSaveRow={async (updatedRow) => {
-                return await handleSaveInventoryRow(record.id, updatedRow);
-              }}
-            />
+            >
+              <EditableInventorySubTable
+                inventories={record.inventories || []}
+                onChange={(updatedInventories) => {
+                  setVehicleParts(prev =>
+                    prev.map(part =>
+                      part.id === record.id
+                        ? { ...part, inventories: updatedInventories }
+                        : part
+                    )
+                  );
+                }}
+                onSaveRow={async (updatedRow) => {
+                  return await handleSaveInventoryRow(record.id, updatedRow);
+                }}
+              />
+            </div>
           ),
           rowExpandable: (record) => !!(record.inventories && record.inventories.length > 0),
         }}

@@ -629,7 +629,13 @@ const ToolsPage = () => {
       <Table
         columns={columns}
         dataSource={data}
-        pagination={tableParams.pagination}
+        pagination={{
+          ...tableParams.pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} de ${total} elementos`,
+        }}
         loading={loading}
         onChange={handleTableChange}
         expandable={{

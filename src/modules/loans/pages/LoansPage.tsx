@@ -845,7 +845,13 @@ const LoansPage = () => {
         columns={columns}
         dataSource={data}
         loading={loading}
-        pagination={tableParams.pagination}
+        pagination={{
+          ...tableParams.pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} de ${total} elementos`,
+        }}
         onChange={handleTableChange}
         expandable={{
           expandedRowRender,
