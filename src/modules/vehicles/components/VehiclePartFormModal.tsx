@@ -10,7 +10,7 @@ const { Option } = Select;
 interface VehiclePartFormModalProps {
   visible: boolean;
   vehiclePart: VehiclePartPayload | null;
-  vehicles: { id: number; name: string; vehicle_type?: string;}[];
+  vehicles: { id: number; name: string; vehicleType?: string;}[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -290,7 +290,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
                 >
                   {vehicles.map((v) => (
                     <Option key={v.id} value={v.id}>
-                      <i className="fas fa-car" style={{ marginRight: 8 }} />
+                      <i className={`fas fa-${v.vehicleType || "car"}`} style={{ marginRight: 8 }} />
                       {v.name}
                     </Option>
                   ))}

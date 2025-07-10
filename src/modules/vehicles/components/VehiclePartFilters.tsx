@@ -17,7 +17,7 @@ interface VehiclePartFiltersProps {
   onSelectedVehicleChange?: (value: number | null) => void;
   onSelectedHeadquarterChange?: (value: number | null) => void;
   onCreateClick: () => void;
-  vehicles?: { id: number; name: string; vehicle_type?: string;}[];
+  vehicles?: { id: number; name: string; vehicleType?: string;}[];
   headquarters?: { id: number; name: string }[];
 }
 
@@ -109,7 +109,7 @@ export const VehiclePartFilters: React.FC<VehiclePartFiltersProps> = ({
             >
               {vehicles.map((v) => (
                 <Option key={v.id} value={v.id}>
-                  <i className="fas fa-car" style={{ marginRight: 8 }} />
+                  <i className={`fas fa-${v.vehicleType || "car"}`} style={{ marginRight: 8 }} />
                   {v.name}
                 </Option>
               ))}

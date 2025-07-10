@@ -242,7 +242,7 @@ export const VehiclePartsPage: React.FC = () => {
   const [selectedHeadquarter, setSelectedHeadquarter] = useState<number | null>(null);
 
   // States for vehicles list (for filters and form)
-  const [vehicles, setVehicles] = useState<{ id: number; name: string; vehicle_type?: string;}[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: number; name: string; vehicleType?: string;}[]>([]);
   const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
 
   const debouncedFetch = debounce((
@@ -309,12 +309,11 @@ export const VehiclePartsPage: React.FC = () => {
       });
 
       const data = await response.json();
-      console.log('Vehicles data:', data);
       if (response.ok) {
         setVehicles(data.map((vehicle: any) => ({
           id: vehicle.id,
           name: vehicle.name,
-          vehicle_type: vehicle.vehicle_type || "",
+          vehicleType: vehicle.vehicleType || "",
         })));
       }
     } catch (error) {
@@ -528,7 +527,10 @@ export const VehiclePartsPage: React.FC = () => {
         const vehicle = vehicles.find(v => v.id === inventoryWithVehicle.vehicleId);
         if (!vehicle) return `Vehículo ID: ${inventoryWithVehicle.vehicleId}`;
         
-        return `${vehicle.name})`;
+        return <span>
+          <i className={`fas fa-${vehicle?.vehicleType || "car"}`} style={{ marginRight: 8 }} />
+          {vehicle.name}
+        </span>
       },
     },
 ];
