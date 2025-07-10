@@ -41,7 +41,9 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 	const saveEdit = async (id: number) => {
 		const row = editingData.find(item => item.id === id);
 		if (!row) return;
-	
+
+		const previousData = inventories;
+
 		try {
 			if (onSaveRow) {
 				const result = await onSaveRow(row);
@@ -49,15 +51,16 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 					throw new Error(result.error || 'Error al guardar');
 				}
 			}
-	
+
 			onChange?.(editingData);
 			setEditingKey(null);
 		} catch (error) {
 			console.error('Fallo al guardar:', error);
-			setEditingData(inventories);
+			setEditingData(previousData);
 			setEditingKey(null);
 		}
 	};
+
 
 	const handleValueChange = (id: number, field: keyof InventoryType, value: number) => {
 		const newData = editingData.map(inv =>
@@ -75,7 +78,7 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 		{
 			title: 'Cantidad',
 			dataIndex: 'quantity',
-			key: 'quantity',
+			render: (_, record) => record.available + record.onLoan + record.damaged,
 		},
 		{
 			title: 'Disponible',
@@ -98,26 +101,34 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 			key: 'onLoan',
 			render: (value, record) =>
 				isEditing(record) ? (
-					<InputNumber
-						min={0}
-						value={record.onLoan}
-						onChange={(val) => handleValueChange(record.id, 'onLoan', val ?? 0)}
-					/>
+					record.consumable ? (
+						value
+					) : (
+						<InputNumber
+							min={0}
+							value={record.onLoan}
+							onChange={(val) => handleValueChange(record.id, 'onLoan', val ?? 0)}
+						/>
+					)
 				) : (
 					value
 				),
 		},
 		{
-			title: 'Dañado',
+			title: 'Averiado',
 			dataIndex: 'damaged',
 			key: 'damaged',
 			render: (value, record) =>
 				isEditing(record) ? (
-					<InputNumber
-						min={0}
-						value={record.damaged}
-						onChange={(val) => handleValueChange(record.id, 'damaged', val ?? 0)}
-					/>
+					record.consumable ? (
+						value
+					) : (
+						<InputNumber
+							min={0}
+							value={record.damaged}
+							onChange={(val) => handleValueChange(record.id, 'damaged', val ?? 0)}
+						/>
+					)
 				) : (
 					value
 				),

@@ -372,7 +372,7 @@ const LoansPage = () => {
   useEffect(() => {
     const roles = auth.user?.role?.map((role) => role.authority);
 
-    if (roles?.includes('ADMINISTRADOR') || roles?.includes('TOOL_ADMINISTRATOR')) {
+    if (roles?.includes('ADMINISTRATOR') || roles?.includes('TOOL_ADMINISTRATOR')) {
       setIsAdmin(true);
     }
 
@@ -614,7 +614,7 @@ const LoansPage = () => {
     }));
 
     let payload = { ...values, tools, dueDate: values.dueDate ? dayjs(values.dueDate).format('YYYY-MM-DD') : null };
-    if (roles?.includes('ADMINISTRADOR') || roles?.includes('TOOL_ADMINISTRATOR')) {
+    if (roles?.includes('ADMINISTRATOR') || roles?.includes('TOOL_ADMINISTRATOR')) {
       payload = {
         ...payload,
         loanStatus: "ON_LOAN",
