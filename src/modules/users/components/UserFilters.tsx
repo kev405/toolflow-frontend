@@ -1,9 +1,10 @@
 import React from 'react';
-import { Row, Col, Select, Button, Space } from 'antd';
+import { Row, Col, Select, Button, Typography, Space } from 'antd';
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { UserRoleTags } from './UserRoleTags';
 
 const { Option } = Select;
+const { Title } = Typography;
 
 interface UserFiltersProps {
   selectedRole: string | null;
@@ -18,16 +19,54 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   selectedRole,
   onRoleChange,
   onCreateClick,
-  onUploadClick
+  onUploadClick,
 }) => {
   return (
     <div className="mb-3">
-      <Row gutter={[16, 16]} align="middle">
-        <Col xs={24} sm={16}>
+      <Row
+        align="middle"
+        justify="space-between"
+        wrap={false}
+        style={{ marginBottom: 24 }}
+      >
+        <Col>
+          <Title level={2} style={{ margin: 0 }} className="text-gray-800">
+            Usuarios
+          </Title>
+        </Col>
+        <Col flex="none">
+          <Space>
+            <Button
+              icon={<UploadOutlined />}
+              onClick={onUploadClick}
+              style={{
+                minWidth: 260,
+              }}
+            >
+              Subir Estudiantes
+            </Button>
+
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={onCreateClick}
+              style={{
+                minWidth: 260,
+                backgroundColor: '#26B857',
+                borderColor: '#26B857',
+              }}
+            >
+              Crear Usuario
+            </Button>
+          </Space>
+        </Col>
+      </Row>
+      <Row gutter={[16, 16]} align="middle" wrap>
+        <Col xs={24} sm={12} md={6}>
           <Select
             placeholder="Filtrar por rol"
             allowClear
-            value={selectedRole || undefined}
+            value={selectedRole ?? undefined}
             onChange={onRoleChange}
             style={{ width: '100%' }}
           >
@@ -37,28 +76,6 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
               </Option>
             ))}
           </Select>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Space
-            direction="horizontal"
-            style={{ width: '100%', justifyContent: 'flex-end' }}
-            wrap
-          >
-            <Button
-              icon={<UploadOutlined />}
-              onClick={onUploadClick}
-            >
-              Subir Estudiantes
-            </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
-              onClick={onCreateClick}
-            >
-              Crear Usuario
-            </Button>
-          </Space>
         </Col>
       </Row>
     </div>

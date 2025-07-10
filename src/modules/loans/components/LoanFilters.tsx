@@ -1,10 +1,11 @@
 import React from 'react';
-import { Button, Select, DatePicker, Row, Col, Tag } from 'antd';
+import { Row, Col, Select, DatePicker, Button, Typography, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { labelMap, LoanStatusTag } from './LoanStatusTag';
 import { ToolType } from '../../tools/pages/ToolsPage';
 
 const { Option } = Select;
+const { Title } = Typography;
 
 interface LoanFiltersProps {
   isAdmin: boolean;
@@ -43,7 +44,37 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
 }) => {
   return (
     <div className="mb-3">
-      <Row gutter={[16, 16]}>
+      {/* -------- Fila 1: título + botón -------- */}
+      <Row
+        align="middle"
+        justify="space-between"
+        wrap={false}
+        style={{ marginBottom: 24 }}
+      >
+        <Col>
+          <Title level={2} style={{ margin: 0 }} className="text-gray-800">
+            Préstamos
+          </Title>
+        </Col>
+
+        <Col flex="none">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={onCreateClick}
+            style={{
+              minWidth: 260,
+              backgroundColor: '#26B857',
+              borderColor: '#26B857',
+            }}
+          >
+            Crear Préstamo
+          </Button>
+        </Col>
+      </Row>
+
+      {/* -------- Fila 2: filtros principales -------- */}
+      <Row gutter={[16, 16]} align="middle" wrap>
         {isAdmin && (
           <Col xs={24} sm={12} md={6}>
             <Select
@@ -53,14 +84,15 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
               onChange={onTeacherChange}
               style={{ width: '100%' }}
             >
-              {teachers.map((teacher) => (
-                <Option key={teacher.id} value={teacher.id}>
-                  {teacher.name}
+              {teachers.map((t) => (
+                <Option key={t.id} value={t.id}>
+                  {t.name}
                 </Option>
               ))}
             </Select>
           </Col>
         )}
+
         <Col xs={24} sm={12} md={6}>
           <Select
             placeholder="Selecciona responsable"
@@ -69,46 +101,50 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
             onChange={onResponsibleChange}
             style={{ width: '100%' }}
           >
-            {responsibles.map((responsible) => (
-              <Option key={responsible.id} value={responsible.id}>
-                {responsible.name}
+            {responsibles.map((r) => (
+              <Option key={r.id} value={r.id}>
+                {r.name}
               </Option>
             ))}
           </Select>
         </Col>
+
         <Col xs={24} sm={12} md={6}>
           <DatePicker
             placeholder="Fecha de vencimiento"
             style={{ width: '100%' }}
             onChange={onDueDateChange}
+            allowClear
           />
         </Col>
+
         <Col xs={24} sm={12} md={6}>
           <Select
             placeholder="Estado del préstamo"
             allowClear
-            value={loanStatus}
+            value={loanStatus ?? undefined}
             onChange={onLoanStatusChange}
             style={{ width: '100%' }}
           >
-            {Object.entries(labelMap).map(([key]) => {
-              if (key === 'ON_CREATE') return null;
-              return (
+            {Object.entries(labelMap).map(([key]) =>
+              key === 'ON_CREATE' ? null : (
                 <Option key={key} value={key}>
                   <LoanStatusTag status={key as keyof typeof labelMap} />
                 </Option>
-              );
-            })}
+              )
+            )}
           </Select>
         </Col>
-        <Col xs={24} md={18}>
+      </Row>
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }} wrap>
+        <Col xs={24} md={24}>
           <Select
             mode="multiple"
             placeholder="Filtrar por herramientas"
             allowClear
             value={selectedTools}
             onChange={onToolChange}
-            style={{ width: '100%' }}
+            style={{ width: '75%' }}
             optionFilterProp="children"
           >
             {tools.map((tool) => {
@@ -117,9 +153,15 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
 
               return (
                 <Option key={tool.id} value={tool.id}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
                     <span>{tool.toolName}</span>
-                    <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                    <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
                       {isOutOfStock && <Tag color="orange">AGOTADO</Tag>}
                       {isInactive && <Tag color="red">INACTIVO</Tag>}
                     </div>
@@ -128,16 +170,6 @@ export const LoanFilters: React.FC<LoanFiltersProps> = ({
               );
             })}
           </Select>
-        </Col>
-        <Col xs={24} md={6} style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            onClick={onCreateClick}
-            style={{ backgroundColor: '#26B857', borderColor: '#26B857', width: '100%' }}
-            type="primary"
-            icon={<PlusOutlined />}
-          >
-            Crear Préstamo
-          </Button>
         </Col>
       </Row>
     </div>

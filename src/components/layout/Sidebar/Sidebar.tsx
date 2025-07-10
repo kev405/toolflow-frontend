@@ -8,11 +8,7 @@ interface SidebarProps {
   brandIcon?: string;
   isCollapsed?: boolean;
   onToggle?: () => void;
-  navItems?: {
-    to: string;
-    icon: string;
-    text: string;
-  }[];
+  navItems?: (SidebarItem | SidebarItemWithSubmenu)[];
   user?: {
     name: string;
     avatar?: string;
@@ -21,14 +17,32 @@ interface SidebarProps {
   overlayClick?: () => void;
 }
 
+interface SidebarItem {
+  to: string;
+  icon: string;
+  text: string;
+}
+
+interface SidebarItemWithSubmenu {
+  icon: string;
+  text: string;
+  submenu: SidebarItem[];
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({
   brandName = 'ToolFlow',
   brandIcon = 'cog',
   isCollapsed = false,
-  onToggle,
-  navItems = [
+  onToggle, navItems = [
     { to: '/loans', icon: 'hand-holding-usd', text: 'Préstamos' },
-    { to: '/vehicles', icon: 'car', text: 'Vehículos' },
+    {
+      icon: 'motorcycle',
+      text: 'Vehículos/Partes',
+      submenu: [
+        { to: '/vehicles', icon: 'car', text: 'Vehículos' },
+        { to: '/vehicle-parts', icon: 'cogs', text: 'Partes' },
+      ],
+    },
     { to: '/tools', icon: 'tools', text: 'Herramientas' },
     { to: '/transfers', icon: 'exchange-alt', text: 'Traslados' },
     { to: '/users', icon: 'users', text: 'Usuarios' },
@@ -40,6 +54,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { user: authUser } = useAuth();
   const [mobileView, setMobileView] = useState(window.innerWidth < 768);
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
+
+  const toggleSubmenu = (menuKey: string) => {
+    setOpenSubmenus((prev) => ({
+      ...prev,
+      [menuKey]: !prev[menuKey],
+    }));
+  };
+
 
   const handleResize = useCallback(() => {
     const isMobile = window.innerWidth < 768;
@@ -64,14 +87,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [mobileView, onToggle]);
 
-  // Filtrar ítems del menú según el rol
   const getNavItemsByRole = () => {
     if (!authUser || !authUser.role) return navItems;
     const roles = authUser.role.map((r) => r.authority);
     if (roles.includes('ADMINISTRATOR')) return navItems;
-    if (roles.includes('TOOL_ADMINISTRATOR')) return navItems.filter(item => item.to !== '/users' && item.to !== '/headquarter');
-    if (roles.includes('TEACHER')) return navItems.filter(item => item.to === '/loans');
-    return [];
+
+    return navItems.filter(item => {
+      if ('submenu' in item) {
+        const filteredSubmenu = item.submenu.filter(subItem => {
+          if (roles.includes('TOOL_ADMINISTRATOR')) {
+            return subItem.to !== '/users' && subItem.to !== '/headquarter';
+          }
+          if (roles.includes('TEACHER')) {
+            return subItem.to === '/loans';
+          }
+          return true;
+        });
+        return filteredSubmenu.length > 0;
+      }
+
+      if (roles.includes('TOOL_ADMINISTRATOR')) {
+        return item.to !== '/users' && item.to !== '/headquarter';
+      }
+      if (roles.includes('TEACHER')) {
+        return item.to === '/loans';
+      }
+      return true;
+    });
   };
 
   const filteredNavItems = getNavItemsByRole();
@@ -79,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {showOverlay && (
-        <div 
+        <div
           className="sidebar-overlay"
           onClick={overlayClick || handleOverlayClick}
           style={{
@@ -95,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      <aside 
+      <aside
         className={`sidebar ${isCollapsed ? 'toggled' : ''}`}
         style={{
           width: isCollapsed ? (mobileView ? '0' : '6.5rem') : '14rem',
@@ -116,20 +158,82 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <nav>
           <ul style={{ listStyle: 'none', padding: '0 1rem' }}>
-            {filteredNavItems.map((item) => {
-              return (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    className="nav-link"
-                    onClick={handleNavLinkClick}
-                    title={isCollapsed ? item.text : ''}
+            {filteredNavItems.map((item, idx) => {
+              if ('submenu' in item && Array.isArray(item.submenu)) {
+                return (
+                  <li
+                    key={`submenu-${item.text}-${idx}`}
+                    className={`submenu-item ${openSubmenus[item.text] ? 'open' : ''}`}
                   >
-                    <i className={`fas fa-${item.icon}`} />
-                    {!isCollapsed && <span>{item.text}</span>}
-                  </NavLink>
-                </li>
-              );
+                    <div
+                      className="nav-link"
+                      title={isCollapsed ? item.text : ''}
+                      onClick={() => toggleSubmenu(item.text)}
+                    >
+                      <span className="nav-label">
+                        <i className={`fas fa-${item.icon}`} />
+                        {!isCollapsed && <span className="nav-text">{item.text}</span>}
+                      </span>
+                      {!isCollapsed && (
+                        <span>
+                          <i
+                            className={`fas fa-chevron-${openSubmenus[item.text] ? 'down' : 'right'}`}
+                            style={{ fontSize: '0.65rem', lineHeight: 1 }}
+                          />
+                        </span>
+                      )}
+                    </div>
+                    {openSubmenus[item.text] && (
+                      isCollapsed ? (
+                        <div className="submenu-list">
+                          {item.submenu.map((subItem) => (
+                            <NavLink
+                              key={subItem.to}
+                              to={subItem.to}
+                              className="nav-link"
+                              onClick={handleNavLinkClick}
+                              title={subItem.text}
+                            >
+                              <i className={`fas fa-${subItem.icon}`} />
+                            </NavLink>
+                          ))}
+                        </div>
+                      ) : (
+                        <ul className="submenu-list">
+                          {item.submenu.map((subItem) => (
+                            <li key={subItem.to}>
+                              <NavLink
+                                to={subItem.to}
+                                className="nav-link"
+                                onClick={handleNavLinkClick}
+                                title={subItem.text}
+                              >
+                                <i className={`fas fa-${subItem.icon}`} />
+                                <span>{subItem.text}</span>
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                    )}
+                  </li>
+                );
+              } else {
+                const simpleItem = item as SidebarItem;
+                return (
+                  <li key={simpleItem.to}>
+                    <NavLink
+                      to={simpleItem.to}
+                      className="nav-link"
+                      onClick={handleNavLinkClick}
+                      title={isCollapsed ? simpleItem.text : ''}
+                    >
+                      <i className={`fas fa-${simpleItem.icon}`} />
+                      {!isCollapsed && <span>{simpleItem.text}</span>}
+                    </NavLink>
+                  </li>
+                );
+              }
             })}
           </ul>
         </nav>
@@ -137,14 +241,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {user && !isCollapsed && (
           <>
             <div className="sidebar-divider" />
-            <div style={{ 
+            <div style={{
               padding: '1rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.75rem'
             }}>
-              <img 
-                src={user.avatar || '/default-avatar.png'} 
+              <img
+                src={user.avatar || '/default-avatar.png'}
                 alt={user.name}
                 style={{
                   width: '2.5rem',
@@ -162,7 +266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <div className="sidebar-divider" />
             <div style={{ textAlign: 'center', padding: '1rem' }}>
-              <button 
+              <button
                 onClick={onToggle}
                 style={{
                   background: 'transparent',

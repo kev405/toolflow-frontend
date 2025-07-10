@@ -3,8 +3,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { Spin } from 'antd';
 
 const getAllowedPrefixes = (roles: string[]): string[] => {
-  if (roles.includes('ADMINISTRATOR')) return ['/tools', '/loans', '/profile', '/transfers', '/users', '/vehicles', '/headquarter'];
-  if (roles.includes('TOOL_ADMINISTRATOR')) return ['/tools', '/loans', '/profile', '/transfers', '/vehicles'];
+  if (roles.includes('ADMINISTRATOR')) return ['/tools', '/loans', '/profile', '/transfers', '/users', '/vehicles', '/vehicle-parts', '/headquarter'];
+  if (roles.includes('TOOL_ADMINISTRATOR')) return ['/tools', '/loans', '/profile', '/transfers', '/vehicles', '/vehicle-parts'];
   if (roles.includes('TEACHER')) return ['/loans', '/profile'];
   return [];
 };

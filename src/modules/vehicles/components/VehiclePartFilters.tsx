@@ -1,39 +1,43 @@
 import React from 'react';
 import { Input, Button, Row, Col, Select, Typography } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import InputMask from 'react-input-mask';
 
 const { Option } = Select;
 const { Title } = Typography;
 
-interface VehicleFiltersProps {
-  searchVehicleType: string;
-  searchPlate: string;
+interface VehiclePartFiltersProps {
+  searchName: string;
   searchBrand: string;
+  searchModel: string;
+  selectedVehicle?: number | null;
   selectedHeadquarter?: number | null;
-  onSearchVehicleTypeChange: (value: string) => void;
-  onSearchPlateChange: (value: string) => void;
+  onSearchNameChange: (value: string) => void;
   onSearchBrandChange: (value: string) => void;
+  onSearchModelChange: (value: string) => void;
+  onSelectedVehicleChange?: (value: number | null) => void;
   onSelectedHeadquarterChange?: (value: number | null) => void;
   onCreateClick: () => void;
+  vehicles?: { id: number; name: string; vehicleType?: string;}[];
   headquarters?: { id: number; name: string }[];
 }
 
-export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
-  searchVehicleType,
-  searchPlate,
+export const VehiclePartFilters: React.FC<VehiclePartFiltersProps> = ({
+  searchName,
   searchBrand,
+  searchModel,
+  selectedVehicle,
   selectedHeadquarter,
-  onSearchVehicleTypeChange,
-  onSearchPlateChange,
+  onSearchNameChange,
   onSearchBrandChange,
+  onSearchModelChange,
+  onSelectedVehicleChange,
   onSelectedHeadquarterChange,
   onCreateClick,
+  vehicles = [],
   headquarters = [],
 }) => {
   return (
     <div className="mb-3">
-      {/* ----------- Fila 1: título + botón ----------- */}
       <Row
         align="middle"
         justify="space-between"
@@ -41,8 +45,8 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
         style={{ marginBottom: 24 }}
       >
         <Col>
-          <Title level={2} style={{ margin: 0 }} className="text-gray-800">
-            Vehículos
+          <Title level={2} style={{ margin: 0 }} className='text-gray-800'>
+            Partes de Vehículos
           </Title>
         </Col>
 
@@ -57,51 +61,19 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
               borderColor: '#26B857',
             }}
           >
-            Crear Vehículo
+            Crear Parte
           </Button>
         </Col>
       </Row>
-
-      {/* ----------- Fila 2: filtros ----------- */}
       <Row gutter={[16, 16]} align="middle" wrap>
         <Col xs={24} sm={12} md={6}>
-          <Select
-            placeholder="Tipo de Vehículo"
-            value={searchVehicleType || undefined}
-            onChange={onSearchVehicleTypeChange}
+          <Input
+            placeholder="Nombre de parte"
+            value={searchName}
+            onChange={(e) => onSearchNameChange(e.target.value)}
+            suffix={<SearchOutlined style={{ color: '#999' }} />}
             allowClear
-            style={{ width: '100%' }}
-          >
-            <Option value="car">
-              <i className="fas fa-car" style={{ marginRight: 8 }} />
-              Automóvil
-            </Option>
-            <Option value="motorcycle">
-              <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
-              Motocicleta
-            </Option>
-          </Select>
-        </Col>
-
-        <Col xs={24} sm={12} md={6}>
-          <InputMask
-            mask="aaa-999"
-            maskChar={null}
-            value={searchPlate}
-            onChange={(e) => onSearchPlateChange(e.target.value)}
-          >
-            {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => {
-              const { size, ...restProps } = inputProps; // evitamos conflicto con AntD
-              return (
-                <Input
-                  {...restProps}
-                  placeholder="Placa"
-                  suffix={<SearchOutlined style={{ color: '#999' }} />}
-                  allowClear
-                />
-              );
-            }}
-          </InputMask>
+          />
         </Col>
 
         <Col xs={24} sm={12} md={6}>
@@ -112,6 +84,37 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
             suffix={<SearchOutlined style={{ color: '#999' }} />}
             allowClear
           />
+        </Col>
+
+        <Col xs={24} sm={12} md={6}>
+          <Input
+            placeholder="Modelo"
+            value={searchModel}
+            onChange={(e) => onSearchModelChange(e.target.value)}
+            suffix={<SearchOutlined style={{ color: '#999' }} />}
+            allowClear
+          />
+        </Col>
+
+        <Col xs={24} sm={12} md={6}>
+          {onSelectedVehicleChange && (
+            <Select
+              placeholder="Vehículo"
+              value={selectedVehicle ?? undefined}
+              onChange={onSelectedVehicleChange}
+              allowClear
+              style={{ width: '100%' }}
+              showSearch
+              optionFilterProp="children"
+            >
+              {vehicles.map((v) => (
+                <Option key={v.id} value={v.id}>
+                  <i className={`fas fa-${v.vehicleType || "car"}`} style={{ marginRight: 8 }} />
+                  {v.name}
+                </Option>
+              ))}
+            </Select>
+          )}
         </Col>
 
         <Col xs={24} sm={12} md={6}>

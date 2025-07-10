@@ -61,15 +61,6 @@ export const UserAvatar = () => {
         <a
           className="dropdown-item"
           href="#"
-          onClick={handleProfileClick}
-        >
-          <i className="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-          Perfil
-        </a>
-        <div className="dropdown-divider"></div>
-        <a
-          className="dropdown-item"
-          href="#"
           onClick={handleLogout}
         >
           <i className="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>

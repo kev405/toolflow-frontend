@@ -501,7 +501,6 @@ const VehiclesPage = () => {
 
   return (
     <div style={{ padding: '24px' }} className="overflow-x-auto">
-      <h1 className="h3 mb-3 text-gray-800">Vehículos</h1>
       <VehicleFilters
         searchVehicleType={searchVehicleType}
         searchPlate={searchPlate}
@@ -516,7 +515,13 @@ const VehiclesPage = () => {
       <Table
         columns={columns}
         dataSource={data}
-        pagination={tableParams.pagination}
+        pagination={{
+          ...tableParams.pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} de ${total} elementos`,
+        }}
         loading={loading}
         onChange={handleTableChange}
       />

@@ -797,24 +797,11 @@ const LoansPage = () => {
       render: (loanStatus: string) => {
         return <LoanStatusTag status={loanStatus} />;
       }
-    },
-    {
-      title: 'Estado',
-      dataIndex: 'status',
-      key: 'status',
-      align: 'center',
-      render: (_, record) => (
-        <Tag color={record.status ? 'success' : 'error'}>
-          {record.status ? 'ACTIVO' : 'INACTIVO'}
-        </Tag>
-      ),
-    },
+    }
   ];
-
 
   return (
     <div style={{ padding: '24px' }} className='overflow-x-auto'>
-      <h1 className='h3 mb-3 text-gray-800'>Préstamos</h1>
       <LoanFilters
         isAdmin={isAdmin}
         teachers={teachers}
@@ -845,7 +832,13 @@ const LoansPage = () => {
         columns={columns}
         dataSource={data}
         loading={loading}
-        pagination={tableParams.pagination}
+        pagination={{
+          ...tableParams.pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} de ${total} elementos`,
+        }}
         onChange={handleTableChange}
         expandable={{
           expandedRowRender,

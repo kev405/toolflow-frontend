@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Table, InputNumber, Form, Button, Space } from 'antd';
+import {
+	Table,
+	InputNumber,
+	Form,
+	Button,
+	Space,
+	Typography,
+	theme,           // 🎨 ← nuevo
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
 	EditOutlined,
@@ -23,16 +31,15 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 	const [editingKey, setEditingKey] = useState<number | null>(null);
 	const [editingData, setEditingData] = useState(inventories);
 
+	const { token } = theme.useToken();     // colorPrimario dinámico
+
 	useEffect(() => {
 		setEditingData(inventories);
 	}, [inventories]);
 
 	const isEditing = (record: InventoryType) => record.id === editingKey;
 
-	const startEdit = (record: InventoryType) => {
-		setEditingKey(record.id);
-	};
-
+	const startEdit = (record: InventoryType) => setEditingKey(record.id);
 	const cancelEdit = () => {
 		setEditingData(inventories);
 		setEditingKey(null);
@@ -42,31 +49,25 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 		const row = editingData.find(item => item.id === id);
 		if (!row) return;
 
-		const previousData = inventories;
-
+		const previous = inventories;
 		try {
 			if (onSaveRow) {
 				const result = await onSaveRow(row);
-				if (result?.success === false) {
-					throw new Error(result.error || 'Error al guardar');
-				}
+				if (result?.success === false) throw new Error(result.error);
 			}
-
 			onChange?.(editingData);
 			setEditingKey(null);
-		} catch (error) {
-			console.error('Fallo al guardar:', error);
-			setEditingData(previousData);
+		} catch (e) {
+			console.error('Fallo al guardar:', e);
+			setEditingData(previous);
 			setEditingKey(null);
 		}
 	};
 
-
 	const handleValueChange = (id: number, field: keyof InventoryType, value: number) => {
-		const newData = editingData.map(inv =>
-			inv.id === id ? { ...inv, [field]: value } : inv
+		setEditingData(prev =>
+			prev.map(inv => (inv.id === id ? { ...inv, [field]: value } : inv)),
 		);
-		setEditingData(newData);
 	};
 
 	const columns: ColumnsType<InventoryType> = [
@@ -74,102 +75,114 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 			title: 'Sede',
 			dataIndex: 'name',
 			key: 'name',
+			width: '42%',
 		},
 		{
 			title: 'Cantidad',
 			dataIndex: 'quantity',
-			render: (_, record) => record.available + record.onLoan + record.damaged,
+			width: '13%',
+			render: (_, r) => r.available + r.onLoan + r.damaged,
 		},
 		{
 			title: 'Disponible',
 			dataIndex: 'available',
-			key: 'available',
-			render: (value, record) =>
-				isEditing(record) ? (
+			width: '15%',
+			render: (v, r) =>
+				isEditing(r) ? (
 					<InputNumber
 						min={0}
-						value={record.available}
-						onChange={(val) => handleValueChange(record.id, 'available', val ?? 0)}
+						value={r.available}
+						onChange={val => handleValueChange(r.id, 'available', val ?? 0)}
 					/>
 				) : (
-					value
+					v
 				),
 		},
 		{
 			title: 'En Préstamo',
 			dataIndex: 'onLoan',
-			key: 'onLoan',
-			render: (value, record) =>
-				isEditing(record) ? (
-					record.consumable ? (
-						value
+			width: '15%',
+			render: (v, r) =>
+				isEditing(r) ? (
+					r.consumable ? (
+						v
 					) : (
 						<InputNumber
 							min={0}
-							value={record.onLoan}
-							onChange={(val) => handleValueChange(record.id, 'onLoan', val ?? 0)}
+							value={r.onLoan}
+							onChange={val => handleValueChange(r.id, 'onLoan', val ?? 0)}
 						/>
 					)
 				) : (
-					value
+					v
 				),
 		},
 		{
 			title: 'Averiado',
 			dataIndex: 'damaged',
-			key: 'damaged',
-			render: (value, record) =>
-				isEditing(record) ? (
-					record.consumable ? (
-						value
+			width: '15%',
+			render: (v, r) =>
+				isEditing(r) ? (
+					r.consumable ? (
+						v
 					) : (
 						<InputNumber
 							min={0}
-							value={record.damaged}
-							onChange={(val) => handleValueChange(record.id, 'damaged', val ?? 0)}
+							value={r.damaged}
+							onChange={val => handleValueChange(r.id, 'damaged', val ?? 0)}
 						/>
 					)
 				) : (
-					value
+					v
 				),
 		},
 		{
 			title: '',
 			key: 'actions',
 			width: 90,
-			render: (_, record) =>
-				isEditing(record) ? (
+			render: (_, r) =>
+				isEditing(r) ? (
 					<Space>
 						<Button
 							icon={<SaveOutlined />}
-							style={{ backgroundColor: '#26B857', borderColor: '#26B857' }}
 							type="primary"
-							onClick={() => saveEdit(record.id)}
+							style={{ background: '#26B857', borderColor: '#26B857' }}
+							onClick={() => saveEdit(r.id)}
 						/>
-						<Button
-							icon={<CloseOutlined />}
-							danger
-							onClick={cancelEdit}
-						/>
+						<Button icon={<CloseOutlined />} danger onClick={cancelEdit} />
 					</Space>
 				) : (
-					<Button
-						icon={<EditOutlined />}
-						onClick={() => startEdit(record)}
-					/>
+					<Button icon={<EditOutlined />} onClick={() => startEdit(r)} />
 				),
 		},
 	];
 
 	return (
-		<Form form={form} component={false}>
-			<Table
-				columns={columns}
-				dataSource={editingData}
-				pagination={false}
-				rowKey="id"
-			/>
-		</Form>
+		<div style={{ padding: 16, background: '#fafafa' }}>
+			<Typography.Title
+				level={5}
+				style={{
+					margin: '0 0 12px',
+					color: token.colorPrimary,
+					fontWeight: 600,
+					fontSize: 14,
+				}}
+			>
+				<i className="fas fa-tools" style={{ marginRight: 8 }} />
+				Inventario&nbsp;por&nbsp;Sede
+			</Typography.Title>
+
+			<Form form={form} component={false}>
+				<Table
+					bordered
+					size="small"
+					style={{ background: '#fff' }}
+					columns={columns}
+					dataSource={editingData}
+					pagination={false}
+					rowKey="id"
+				/>
+			</Form>
+		</div>
 	);
 };
-

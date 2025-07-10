@@ -577,16 +577,6 @@ const ToolsPage = () => {
       sorter: true,
     },
     {
-      title: 'Estado',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: boolean) => (
-        <Tag color={status ? 'success' : 'error'}>
-          {status ? 'ACTIVO' : 'INACTIVO'}
-        </Tag>
-      ),
-    },
-    {
       title: 'Categoría',
       dataIndex: ['category', 'name'],
       key: 'category',
@@ -596,7 +586,6 @@ const ToolsPage = () => {
 
   return (
     <div style={{ padding: '24px' }} className='overflow-x-auto'>
-      <h1 className='h3 mb-3 text-gray-800'>Herramientas</h1>
       <ToolFilters
         searchName={searchName}
         searchBrand={searchBrand}
@@ -610,7 +599,13 @@ const ToolsPage = () => {
       <Table
         columns={columns}
         dataSource={data}
-        pagination={tableParams.pagination}
+        pagination={{
+          ...tableParams.pagination,
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total, range) =>
+            `${range[0]}-${range[1]} de ${total} elementos`,
+        }}
         loading={loading}
         onChange={handleTableChange}
         expandable={{

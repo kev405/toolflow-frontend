@@ -319,17 +319,7 @@ const UsersPage = () => {
       dataIndex: 'rol',
       key: 'rol',
       render: (roles: string[] | string) => <UserRoleTags roles={roles} />
-    },
-    {
-      title: 'Estado',
-      dataIndex: 'estado',
-      key: 'estado',
-      render: (estado: string) => (
-        <Tag color={estado === 'Activo' ? 'success' : 'error'} style={{ textTransform: 'uppercase' }}>
-          {estado}
-        </Tag>
-      ),
-    },
+    }
   ]
 
   const updateUser = async (id: number, user: any) => {
@@ -455,7 +445,6 @@ const UsersPage = () => {
           style={{ display: 'none' }}
           onChange={handleUploadStudents}
         />
-        <h1 className='h3 mb-3 text-gray-800'>Usuarios</h1>
         <UserFilters
           selectedRole={selectedRole}
           onRoleChange={(value) => setSelectedRole(value)}
@@ -470,7 +459,13 @@ const UsersPage = () => {
         <Table
           columns={columns}
           dataSource={data}
-          pagination={tableParams.pagination}
+          pagination={{
+            ...tableParams.pagination,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} de ${total} elementos`,
+          }}
           loading={loading}
           onChange={handleTableChange}
         />
