@@ -383,15 +383,21 @@ const VehiclesPage = () => {
   };
 
   const renderPlate = (plate: string) => {
-    const [letters, numbers] = plate.split('-');
+    if (!plate) return null;
+    const clean = plate.toUpperCase();
+
+    const letters = clean.slice(0, 3);
+    const rest    = clean.slice(3);
+  
     return (
       <span className="plate-colombia">
         {letters}
         <span className="plate-dash">-</span>
-        {numbers}
+        {rest}
       </span>
     );
   };
+  
 
   const columns: ColumnsType<VehicleType> = [
     {
