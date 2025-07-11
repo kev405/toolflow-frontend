@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import InputMask from 'react-input-mask';
 import { Modal, Form, Input, Button, Select, Row, Col } from 'antd';
 import { VehiclePayload } from '../pages/VehiclesPage';
@@ -23,11 +23,22 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
   title,
 }) => {
   const [form] = Form.useForm();
+  const [plateMask, setPlateMask] = useState<'aaa999' | 'aaa99a'>(
+    initialValues.vehicleType === 'motorcycle' ? 'aaa99a' : 'aaa999'
+  );
 
   useEffect(() => {
-    if (open) {
-      form.setFieldsValue(initialValues);
-    }
+    setPlateMask(initialValues.vehicleType === 'motorcycle' ? 'aaa99a' : 'aaa999');
+  }, [initialValues.vehicleType]);
+
+  const handleVehicleTypeChange = (value: string) => {
+    const newMask = value === 'motorcycle' ? 'aaa99a' : 'aaa999';
+    setPlateMask(newMask);
+    form.validateFields(['plate']).catch(() => {});
+  };
+
+  useEffect(() => {
+    if (open) form.setFieldsValue(initialValues);
   }, [open, initialValues, form]);
 
   const handleFinish = async (values: VehiclePayload) => {
@@ -63,53 +74,65 @@ export const VehicleFormModal: React.FC<VehicleFormModalProps> = ({
               label="Tipo de Vehículo"
               rules={[{ required: true, message: 'Por favor seleccione el tipo de vehículo' }]}
             >
-              <Select placeholder="Seleccione el tipo de vehículo">
+              <Select placeholder="Seleccione el tipo de vehículo" onChange={handleVehicleTypeChange}>
                 <Option value="car">
-                  <i className="fas fa-car" style={{ marginRight: 8 }} />
-                  Automóvil
+                  <i className="fas fa-car" /> Automóvil
                 </Option>
                 <Option value="motorcycle">
-                  <i className="fas fa-motorcycle" style={{ marginRight: 8 }} />
-                  Motocicleta
+                  <i className="fas fa-motorcycle" /> Motocicleta
                 </Option>
               </Select>
             </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              name="plate"
-              label="Placa"
-              rules={[
-                { required: true, message: 'Por favor ingrese la placa del vehículo' },
-                {
-                  pattern: /^[A-Z]{3}-\d{3}$/,
-                  message: 'El formato debe ser ABC-123 (3 letras, guion, 3 números)',
-                },
-              ]}
-            >
-              <InputMask
-                mask="aaa-999"
-                maskChar={null}
-              >
-                {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => {
-                  const { size, ...restProps } = inputProps;
-                  return (
-                    <Input
-                      {...restProps}
-                      placeholder="Ejemplo: ABC-123"
-                      maxLength={7}
-                      onInput={e => {
-                        const target = e.target as HTMLInputElement;
-                        target.value = target.value.toUpperCase();
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.vehicleType !== cur.vehicleType}>
+              {({ getFieldValue }) => {
+                const type = getFieldValue('vehicleType');
+                const regexCar = /^[A-Z]{3}\d{3}$/;
+                const regexMoto = /^[A-Z]{3}\d{2}[A-Z]$/;
+
+                return (
+                  <Form.Item
+                    name="plate"
+                    label="Placa"
+                    rules={[
+                      { required: true, message: 'Por favor ingrese la placa del vehículo' },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          if (type === 'motorcycle' ? regexMoto.test(value) : regexCar.test(value)) {
+                            return Promise.resolve();
+                          }
+                          return Promise.reject(
+                            new Error(
+                              type === 'motorcycle'
+                                ? 'Formato moto: ABC12D'
+                                : 'Formato carro: ABC123'
+                            )
+                          );
+                        },
+                      },
+                    ]}
+                  >
+                    <InputMask mask={plateMask} maskChar={null}>
+                      {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => {
+                        const { size, ...rest } = inputProps;
+                        return (
+                          <Input
+                            {...rest}
+                            placeholder={type === 'motorcycle' ? 'Ej. ABC12D' : 'Ej. ABC123'}
+                            maxLength={6}
+                            onInput={e =>
+                              (e.currentTarget.value = e.currentTarget.value.toUpperCase())
+                            }
+                          />
+                        );
                       }}
-                    />
-                  );
-                }}
-              </InputMask>
+                    </InputMask>
+                  </Form.Item>
+                );
+              }}
             </Form.Item>
           </Col>
         </Row>
-
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item

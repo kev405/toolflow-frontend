@@ -33,7 +33,6 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
 }) => {
   return (
     <div className="mb-3">
-      {/* ----------- Fila 1: título + botón ----------- */}
       <Row
         align="middle"
         justify="space-between"
@@ -61,8 +60,6 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
           </Button>
         </Col>
       </Row>
-
-      {/* ----------- Fila 2: filtros ----------- */}
       <Row gutter={[16, 16]} align="middle" wrap>
         <Col xs={24} sm={12} md={6}>
           <Select
@@ -85,25 +82,25 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
 
         <Col xs={24} sm={12} md={6}>
           <InputMask
-            mask="aaa-999"
+            mask="aaa99*"
             maskChar={null}
             value={searchPlate}
-            onChange={(e) => onSearchPlateChange(e.target.value)}
+            onChange={e => onSearchPlateChange(e.target.value.toUpperCase())}
           >
             {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => {
-              const { size, ...restProps } = inputProps; // evitamos conflicto con AntD
+              const { size, ...restProps } = inputProps;
               return (
                 <Input
                   {...restProps}
-                  placeholder="Placa"
+                  placeholder="Placa (ABC123 / ABC12D)"
                   suffix={<SearchOutlined style={{ color: '#999' }} />}
                   allowClear
+                  maxLength={6}
                 />
               );
             }}
           </InputMask>
         </Col>
-
         <Col xs={24} sm={12} md={6}>
           <Input
             placeholder="Marca"
@@ -113,7 +110,6 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
             allowClear
           />
         </Col>
-
         <Col xs={24} sm={12} md={6}>
           {onSelectedHeadquarterChange && (
             <Select
