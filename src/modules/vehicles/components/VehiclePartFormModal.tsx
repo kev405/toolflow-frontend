@@ -255,27 +255,25 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             </Form.Item>
           </Col>
         </Row>
-        {!vehiclePart?.id && (
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item name="isAssociatedToVehicle" valuePropName="checked">
-                <Checkbox
-                  onChange={(e) => {
-                    setIsAssociatedToVehicle(e.target.checked);
-                    if (e.target.checked) {
-                      form.setFieldValue('vehicleType', undefined);
-                    } else {
-                      form.setFieldValue('vehicleId', undefined);
-                    }
-                  }}
-                >
-                  ¿Parte asociada a un vehículo específico?
-                </Checkbox>
-              </Form.Item>
-            </Col>
-          </Row>
-        )}
-        {!vehiclePart?.id && isAssociatedToVehicle && (
+        <Row gutter={16}>
+          <Col span={24}>
+            <Form.Item name="isAssociatedToVehicle" valuePropName="checked">
+              <Checkbox
+                onChange={(e) => {
+                  setIsAssociatedToVehicle(e.target.checked);
+                  if (e.target.checked) {
+                    form.setFieldValue('vehicleType', undefined);
+                  } else {
+                    form.setFieldValue('vehicleId', undefined);
+                  }
+                }}
+              >
+                ¿Parte asociada a un vehículo específico?
+              </Checkbox>
+            </Form.Item>
+          </Col>
+        </Row>
+        {isAssociatedToVehicle && (
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -299,7 +297,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             </Col>
           </Row>
         )}
-        {!vehiclePart?.id && !isAssociatedToVehicle && (
+        {!isAssociatedToVehicle && (
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
