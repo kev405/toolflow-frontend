@@ -37,6 +37,8 @@ export interface VehiclePartType {
   description?: string;
   notes?: string;
   createdAt?: string;
+  vehicleId?: number | null;
+  vehicleType?: string;
   inventories?: VehiclePartInventoryType[];
 }
 
@@ -382,7 +384,9 @@ export const VehiclePartsPage: React.FC = () => {
   const handleCreate = () => {
     setEditingVehiclePart(emptyVehiclePart);
     setIsModalVisible(true);
-  };  const handleEdit = (vehiclePart: VehiclePartType) => {
+  };
+
+  const handleEdit = (vehiclePart: VehiclePartType) => {
     setEditingVehiclePart({
       id: vehiclePart.id,
       name: vehiclePart.name,
@@ -390,8 +394,8 @@ export const VehiclePartsPage: React.FC = () => {
       model: vehiclePart.model,
       description: vehiclePart.description || '',
       notes: vehiclePart.notes || '',
-      vehicleId: undefined, // Will be set in the form if needed
-      vehicleType: undefined, // Will be set in the form if needed
+      vehicleId: vehiclePart.vehicleId || null,
+      vehicleType: vehiclePart.vehicleType || undefined,
     });
     setIsModalVisible(true);
   };
