@@ -1120,7 +1120,7 @@ const TransfersPages = () => {
     }) || false;
     const hasInactiveVehicle = actionTransfer.vehicles?.some(v => {
       const vehicle = allVehicles.find(av => av.id === v.vehicleId);
-      return !vehicle || vehicle.status === false || (vehicle.available ?? 1) === 0;
+      return !vehicle || vehicle.status === false;
     }) || false;
     if (hasInactiveTool || hasInactivePart || hasInactiveVehicle) {
       message.error('No se puede aceptar el traslado porque contiene herramientas, partes o vehículos inactivos, no disponibles o inexistentes. Elimine los ítems inactivos antes de aceptar.');
