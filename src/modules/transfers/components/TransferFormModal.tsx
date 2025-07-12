@@ -60,6 +60,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
   const [form] = Form.useForm();
   const [current, setCurrent] = useState(0);
   const [selectedHeadquarterId, setSelectedHeadquarterId] = useState<number | undefined>();
+  const [selectedDestinationHeadquarterId, setSelectedDestinationHeadquarterId] = useState<number | undefined>();
   const [hasInactiveTool, setHasInactiveTool] = useState(false);
 
   useEffect(() => {
@@ -87,6 +88,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
         onHeadquarterChange(currentHeadquarterId);
       }
     }
+    setSelectedDestinationHeadquarterId(form.getFieldValue('destinationHeadquarterId'));
   });
 
   // Eliminar el useEffect anterior de onFieldsChange
@@ -411,7 +413,17 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                 name="originHeadquarterId"
                 rules={[{ required: true, message: 'Selecciona una sede de origen' }]}
               >
-                <Select placeholder="Selecciona sede origen">
+                <Select
+                  placeholder="Selecciona sede origen"
+                  onChange={value => {
+                    setSelectedHeadquarterId(value);
+                    // Si la sede destino es igual, límpiala
+                    if (form.getFieldValue('destinationHeadquarterId') === value) {
+                      form.setFieldsValue({ destinationHeadquarterId: undefined });
+                    }
+                    if (onHeadquarterChange) onHeadquarterChange(value);
+                  }}
+                >
                   {headquarters.map(hq => (
                     <Select.Option key={hq.id} value={hq.id}>
                       {hq.name}
@@ -427,11 +439,13 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                 rules={[{ required: true, message: 'Selecciona una sede de destino' }]}
               >
                 <Select placeholder="Selecciona sede destino">
-                  {headquarters.map(hq => (
-                    <Select.Option key={hq.id} value={hq.id}>
-                      {hq.name}
-                    </Select.Option>
-                  ))}
+                  {headquarters
+                    .filter(hq => hq.id !== form.getFieldValue('originHeadquarterId'))
+                    .map(hq => (
+                      <Select.Option key={hq.id} value={hq.id}>
+                        {hq.name}
+                      </Select.Option>
+                    ))}
                 </Select>
               </Form.Item>
             </Col>
