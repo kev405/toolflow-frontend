@@ -184,6 +184,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
                 style={{ width: '100%' }}
                 disabled={Form.useWatch('sameDay', form) || !isEditable}
                 variant={Form.useWatch('sameDay', form) ? 'borderless' : 'outlined'}
+                disabledDate={(current) => current && current < dayjs().startOf('day')}
               />
             </Form.Item>
           </Col>
