@@ -108,7 +108,7 @@ export const ToolFormModal: React.FC<ToolFormModalProps> = ({
                 label="Cantidad Disponible"
                 rules={[{ required: true, message: 'Por favor ingresa la cantidad disponible' }]}
               >
-                <InputNumber min={0} style={{ width: '100%' }} />
+                <InputNumber min={0} style={{ width: '100%' }} addonAfter="Unidades"/>
               </Form.Item>
             </Col>
           )}

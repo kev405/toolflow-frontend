@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Tag, Button, Dropdown, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { MenuProps } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { LoanFilters } from '../components/LoanFilters';
 import LoanFormModal from '../components/LoanFormModal';
 import { useAuth } from '../../../hooks/useAuth';
@@ -10,8 +10,9 @@ import { API_BASE_URL } from '../../../config';
 import dayjs from 'dayjs';
 import { LoanStatusTag } from '../components/LoanStatusTag';
 import { ToolType } from '../../tools/pages/ToolsPage';
+import LoanDetailsModal from '../components/LoanDetailsModal';
 
-interface LoanType {
+export interface LoanType {
   id: number;
   teacher: {
     id: number;
@@ -344,6 +345,8 @@ const deleteLoan = async (id: number) => {
 const LoansPage = () => {
   const auth = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState<LoanType | null>(null);
   const [data, setData] = useState<LoanType[]>([]);
   const [teachers, setTeachers] = useState<{ id: number, username: string, name: string }[]>([]);
   const [students, setStudents] = useState<{ id: number, username: string, name: string }[]>([]);
@@ -425,16 +428,16 @@ const LoansPage = () => {
     setLoading(true);
     try {
       const result = await fetchTools();
-  
+
       if (result.success && result.data) {
         const filteredTools = result.data
           .map((tool: ToolType) => {
             const mainInventory = tool.inventories?.find(inv => inv.main);
-  
+
             if (!mainInventory) {
               return null;
             }
-  
+
             return {
               ...tool,
               quantity: mainInventory.quantity,
@@ -444,7 +447,7 @@ const LoansPage = () => {
             };
           })
           .filter(Boolean);
-  
+
         setTools(filteredTools as ToolType[]);
       }
     } catch (error) {
@@ -473,7 +476,7 @@ const LoansPage = () => {
         responsibleName,
         dueDate ?? undefined,
         loanStatus ?? undefined,
-        selectedTools 
+        selectedTools
       );
       if (result.success && result.data) {
         const formattedData = result.data.map((loan: LoanType) => ({
@@ -586,6 +589,11 @@ const LoansPage = () => {
     } else {
       message.error(result.error);
     }
+  };
+
+  const handleView = (record: LoanType) => {
+    setSelectedLoan(record);
+    setDetailsOpen(true);
   };
 
   const handleUpdateLoan = async (values: LoanPayload) => {
@@ -709,36 +717,50 @@ const LoansPage = () => {
       title: 'Acciones',
       key: 'actions',
       render: (_, record) => {
+        const isClosed = ['FINALIZED', 'CANCELLED'].includes(record.loanStatus);
+  
         const items: MenuProps['items'] = [
           {
-            key: '1',
-            label: 'Editar',
-            icon: <EditOutlined style={{ color: '#1890ff' }} />,
+            key: 'view',
+            label: 'Ver',
+            icon: <EyeOutlined style={{ color: '#52c41a' }} />,
           },
-          ...(record.loanStatus === 'ORDER'
-            ? [{
-              key: '2',
-              label: 'Eliminar',
-              icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
-            }]
-            : [])
+          ...(!isClosed
+            ? [
+                {
+                  key: 'edit',
+                  label: 'Editar',
+                  icon: <EditOutlined style={{ color: '#1890ff' }} />,
+                },
+              ]
+            : []),
+          ...(!isClosed && record.loanStatus === 'ORDER'
+            ? [
+                {
+                  key: 'delete',
+                  label: 'Eliminar',
+                  icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
+                },
+              ]
+            : []),
         ];
-
+  
         return (
           <Dropdown
             trigger={['click']}
             menu={{
               items,
               onClick: ({ key }) => {
-                if (key === '1') handleEdit(record);
-                if (key === '2') handleDelete(record);
-              }
+                if (key === 'view') handleView(record);
+                if (key === 'edit') handleEdit(record);
+                if (key === 'delete') handleDelete(record);
+              },
             }}
           >
             <Button type="text">•••</Button>
           </Dropdown>
         );
-      }
+      },
     },
     {
       title: 'ID',
@@ -864,6 +886,14 @@ const LoansPage = () => {
         onSubmit={handleSubmit}
         title={isCreating ? 'Crear Préstamo' : 'Editar Préstamo'}
         initialValues={loan}
+      />
+      <LoanDetailsModal
+        open={detailsOpen}
+        onClose={() => {
+          setDetailsOpen(false);
+          setSelectedLoan(null);
+        }}
+        loan={selectedLoan}
       />
     </div>
   );
