@@ -12,6 +12,7 @@ interface ItemOption {
   id: number;
   name: string;
   available?: number;
+  availableQuantity?: number;
   headquarterId?: number | null;
   status?: boolean;
 }
@@ -65,6 +66,10 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
 
   useEffect(() => {
     if (open) {
+      // Resetear al primer paso cuando se abre el modal
+      setCurrent(0);
+      setSelectedHeadquarterId(undefined);
+      
       form.setFieldsValue({
         ...initialValues,
         transferDate: initialValues?.transferDate ? dayjs(initialValues.transferDate) : dayjs(),
@@ -202,9 +207,9 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                         isInactive = !!(tool && tool.status === false);
                         if (isInactive) errorMsg = 'La herramienta seleccionada está inactiva. Por favor, elimínala del traslado para continuar.';
                       } else if (fieldName === 'vehicleParts' && selectedItemId) {
-                        // Buscar tanto en vehiclePartsAll como en el propio selectedItem
-                        const part = vehiclePartsAll.find(p => p.id === selectedItemId);
-                        isInactive = !!((part && (part.status === false || part.available === 0)) || selectedItemId && (selectedIds.includes(selectedItemId) && (part === undefined)));
+                        // Buscar solo en availableVehicleParts
+                        const availablePart = availableVehicleParts.find(p => Number(p.id) === Number(selectedItemId));
+                        isInactive = !availablePart || availablePart.available === 0;
                         if (isInactive) errorMsg = 'La parte seleccionada está inactiva. Por favor, elimínala del traslado para continuar.';
                       }
                       return (
@@ -237,7 +242,10 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                                         <span>{item.name.replace(/ \(INACTIVO\)$/, '')}</span>
                                         <div style={{ display: 'flex', gap: 4, marginLeft: 8 }}>
                                           {item.status === false && <Tag color="red">INACTIVA</Tag>}
-                                          {item.available === 0 && item.status !== false && <Tag color="red">INACTIVA</Tag>}
+                                          {(() => {
+                                            const availablePart = availableVehicleParts.find(p => Number(p.id) === Number(item.id));
+                                            return availablePart && availablePart.available === 0 ? <Tag color="red">INACTIVA</Tag> : null;
+                                          })()}
                                         </div>
                                       </div>
                                     </Select.Option>
@@ -256,9 +264,20 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                                     if (value) {
                                       const selectedItemId = form.getFieldValue([fieldName, name, 'id']);
                                       const selectedItem = allItems.find(item => item.id === selectedItemId);
-
-                                      if (selectedItem && (selectedItem.available || 0) > 0 && value > (selectedItem.available || 0)) {
-                                        return Promise.reject(new Error(`Máximo disponible: ${selectedItem.available || 0}`));
+                                      if (fieldName === 'vehicleParts') {
+                                        const availablePart = availableVehicleParts.find(p => Number(p.id) === Number(selectedItemId));
+                                        const availableQty = availablePart ? availablePart.available : 0;
+                                        if (!availablePart || availableQty === 0) {
+                                          return Promise.reject(new Error('La parte seleccionada no está disponible.'));
+                                        }
+                                        if (selectedItem && value > (availableQty ?? 0)) {
+                                          return Promise.reject(new Error(`Máximo disponible: ${availableQty}`));
+                                        }
+                                      } else {
+                                        const availableQty = selectedItem ? (selectedItem.available ?? 0) : 0;
+                                        if (selectedItem && availableQty > 0 && value > availableQty) {
+                                          return Promise.reject(new Error(`Máximo disponible: ${availableQty}`));
+                                        }
                                       }
                                     }
                                     return Promise.resolve();
@@ -501,9 +520,13 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
     // Validar que no se exceda la cantidad disponible
     const validateQuantities = (items: any[], availableItems: ItemOption[], itemType: string) => {
       for (const item of items || []) {
-        const availableItem = availableItems.find(ai => ai.id === item.id);
-        if (availableItem && item.quantity > (availableItem.available || 0)) {
-          message.error(`${itemType}: La cantidad de "${availableItem.name}" excede lo disponible (${availableItem.available || 0})`);
+        // Solo usar availableVehicleParts para partes de vehículo
+        let availableItem = availableItems.find(ai => Number(ai.id) === Number(item.id));
+        if (itemType === 'Partes de vehículo') {
+          availableItem = availableVehicleParts.find(ai => Number(ai.id) === Number(item.id));
+        }
+        if (!availableItem || item.quantity > (availableItem.available ?? 0)) {
+          message.error(`${itemType}: La cantidad de "${item.name}" excede lo disponible (${availableItem ? availableItem.available : 0})`);
           return false;
         }
       }
@@ -552,8 +575,8 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
       const values = form.getFieldsValue(true);
       const selectedIds = values.vehicleParts?.map((item: any) => item?.id) || [];
       const inactive = selectedIds.some((id: number) => {
-        const part = vehiclePartsAll.find(p => p.id === id);
-        return part && part.status === false;
+        const availablePart = availableVehicleParts.find(p => Number(p.id) === Number(id));
+        return !availablePart || availablePart.available === 0;
       });
       setHasInactivePart(inactive);
     } else {
@@ -570,7 +593,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
     } else {
       setHasInactiveVehicle(false);
     }
-  }, [form, current, vehiclePartsAll, vehiclesAll]);
+  }, [form, current, vehiclePartsAll, vehiclesAll, availableVehicleParts]);
   const handleFormValuesChange = (changedValues: any, allValues: any) => {
     if (current === 1) {
       const selectedIds = allValues.tools?.map((item: any) => item?.id) || [];
@@ -583,8 +606,8 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
     if (current === 2) {
       const selectedIds = allValues.vehicleParts?.map((item: any) => item?.id) || [];
       const inactive = selectedIds.some((id: number) => {
-        const part = vehiclePartsAll.find(p => p.id === id);
-        return part && part.status === false;
+        const availablePart = availableVehicleParts.find(p => Number(p.id) === Number(id));
+        return !availablePart || availablePart.available === 0;
       });
       setHasInactivePart(inactive);
     }
