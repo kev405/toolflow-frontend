@@ -1,188 +1,311 @@
-import React, { useEffect, useState } from 'react';
-import { Table, InputNumber, Form, Button, Space, Spin, message, Typography, theme } from 'antd';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+	Table,
+	InputNumber,
+	Form,
+	Button,
+	Space,
+	Spin,
+	message,
+	Typography,
+	theme,
+	Modal,
+	Select,
+	Tag,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
 	EditOutlined,
 	CloseOutlined,
 	SaveOutlined,
+	LinkOutlined,
+	DisconnectOutlined,
 } from '@ant-design/icons';
-import { VehiclePartInventoryType } from '../pages/VehiclePartsPage';
+import { VehiclePartInventoryType, VehiclePartType } from '../pages/VehiclePartsPage';
 
 interface EditableVehiclePartInventorySubTableProps {
+	vehiclePart: VehiclePartType;
 	inventories: VehiclePartInventoryType[];
+	vehicles: { id: number; name: string; vehicleType?: string; headquarterId: number }[];
 	onChange?: (updated: VehiclePartInventoryType[]) => void;
 	onSaveRow?: (updatedRow: VehiclePartInventoryType) => Promise<{ success: boolean; error?: string } | void>;
+	onAssociate?: (
+		partId: number,
+		headquarterId: number,
+		vehicleId: number | null,
+		quantity: number
+	) => Promise<{ success: boolean; error?: string }>;
+	onDisassociate?: (
+		partId: number,
+		headquarterId: number,
+		vehicleId: number | null,
+		quantity: number
+	) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySubTableProps> = ({
+	vehiclePart,
 	inventories,
+	vehicles,
 	onChange,
 	onSaveRow,
+	onAssociate,
+	onDisassociate,
 }) => {
 	const [form] = Form.useForm();
-	const [editingKey, setEditingKey] = useState<number | null>(null);
-	const [editingData, setEditingData] = useState(inventories);
-	const [loading, setLoading] = useState<number | null>(null);
+	const [editingKey, setEditingKey] = useState<string | null>(null);
+	const [tableData, setTableData] = useState(inventories);
+	const [rowLoading, setRowLoading] = useState<string | null>(null);
 
-	const { token } = theme.useToken();       // 🎨 colorPrimario dinámico
+	const [modalOpen, setModalOpen] = useState(false);
+	const [modalMode, setModalMode] = useState<'associate' | 'disassociate'>('associate');
+	const [currentInv, setCurrentInv] = useState<VehiclePartInventoryType | null>(null);
+	const [currentVeh, setCurrentVeh] = useState<number | null>(null);
+	const [transferQty, setTransferQty] = useState<number>(1);
+	const [modalBusyId, setModalBusyId] = useState<number | null>(null);
 
+	const { token } = theme.useToken();
 
-	useEffect(() => {
-		setEditingData(inventories);
-	}, [inventories]);
+	useEffect(() => { setTableData(inventories); }, [inventories]);
 
-	const isEditing = (record: VehiclePartInventoryType) => record.headquarterId === editingKey;
+	const isEditing = (rec: VehiclePartInventoryType) =>
+		editingKey === rowKey(rec);
 
-	const startEdit = (record: VehiclePartInventoryType) => {
-		setEditingKey(record.headquarterId);
-		form.setFieldsValue({ quantity: record.quantity });
+	const filteredVehicles = useMemo(() => {
+		if (!currentInv) return [];
+		return vehicles.filter(
+			v =>
+				v.vehicleType === vehiclePart.vehicleType &&
+				v.headquarterId === currentInv.headquarterId
+		);
+	}, [vehicles, vehiclePart.vehicleType, currentInv]);
+
+	const startEdit = (rec: VehiclePartInventoryType) => {
+		setEditingKey(rowKey(rec));
+		form.setFieldsValue({ quantity: rec.quantity });
 	};
 
 	const cancelEdit = () => {
-		setEditingData(inventories);
 		setEditingKey(null);
 		form.resetFields();
 	};
 
-	const saveEdit = async (headquarterId: number) => {
+	const saveEdit = async (rec: VehiclePartInventoryType) => {
 		try {
-			const values = await form.validateFields();
-			const row = editingData.find(item => item.headquarterId === headquarterId);
-			if (!row) return;
+			const { quantity } = await form.validateFields();
+			const updated = { ...rec, quantity };
+			setRowLoading(rowKey(rec));
 
-			const updatedRow = { ...row, quantity: values.quantity };
-			setLoading(headquarterId);
+			const res = await onSaveRow?.(updated);
+			if (res?.success === false) throw new Error(res.error);
 
-			if (onSaveRow) {
-				const result = await onSaveRow(updatedRow);
-				if (result?.success === false) {
-					throw new Error(result.error || 'Error al guardar');
-				}
-			}
-
-			// Actualizar datos locales
-			const newData = editingData.map(inv =>
-				inv.headquarterId === headquarterId ? updatedRow : inv
+			const newData = tableData.map(r =>
+				rowKey(r) === rowKey(rec) ? updated : r
 			);
-			setEditingData(newData);
+			setTableData(newData);
 			onChange?.(newData);
-			setEditingKey(null);
-			form.resetFields();
-			message.success('Cantidad actualizada correctamente');
-		} catch (error) {
-			console.error('Fallo al guardar:', error);
-			message.error('Error al actualizar la cantidad');
-			setEditingData(inventories);
-			setEditingKey(null);
-			form.resetFields();
+			cancelEdit();
+		} catch (err) {
+			message.error((err as Error).message || 'Error al actualizar');
 		} finally {
-			setLoading(null);
+			setRowLoading(null);
 		}
 	};
 
-	const handleValueChange = (value: number | null) => {
-		form.setFieldsValue({ quantity: value || 0 });
+	const openModal = (
+		mode: 'associate' | 'disassociate',
+		inv: VehiclePartInventoryType
+	) => {
+		setModalMode(mode);
+		setCurrentInv(inv);
+		setCurrentVeh(mode === 'associate' ? null : inv.vehicleId);
+		setTransferQty(1);
+		setModalOpen(true);
 	};
 
 	const columns: ColumnsType<VehiclePartInventoryType> = [
 		{
 			title: 'Sede',
 			dataIndex: 'headquarterName',
-			key: 'headquarterName',
-			width: '50%',
+			width: '45%',
 		},
 		{
 			title: 'Cantidad',
 			dataIndex: 'quantity',
-			key: 'quantity',
-			width: '30%',
-			render: (value, record) =>
-				isEditing(record) ? (
+			width: '20%',
+			render: (val, rec) =>
+				isEditing(rec) ? (
 					<Form form={form}>
 						<Form.Item
 							name="quantity"
 							style={{ margin: 0 }}
 							rules={[
-								{ required: true, message: 'Cantidad requerida' },
-								{ type: 'number', min: 0, message: 'La cantidad debe ser mayor o igual a 0' },
+								{ required: true, message: 'Requerido' },
+								{ type: 'number', min: 0, message: '≥ 0' },
 							]}
 						>
-							<InputNumber
-								min={0}
-								style={{ width: '100%' }}
-								onChange={handleValueChange}
-								parser={(value) => value ? parseInt(value.replace(/\D/g, ''), 10) : 0}
-								formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-							/>
+							<InputNumber style={{ width: '100%' }} />
 						</Form.Item>
 					</Form>
 				) : (
-					<span>{value?.toLocaleString() || 0}</span>
+					val.toLocaleString()
 				),
 		},
 		{
-			title: 'Acciones',
-			key: 'actions',
+			title: 'Vehículo',
+			dataIndex: 'vehicleId',
 			width: '20%',
-			render: (_, record) => {
-				const editable  = isEditing(record);
-				const isLoading = loading === record.headquarterId;
-		
-				return editable ? (
-					<Space>
-						<Button
-							icon={isLoading ? <Spin size="small" /> : <SaveOutlined />}
-							type="primary"
-							style={{ background: '#26B857', borderColor: '#26B857' }}  // mismo verde ✔️
-							onClick={() => saveEdit(record.headquarterId)}
-							disabled={isLoading}
-						/>
-						<Button
-							icon={<CloseOutlined />}        // rojo ✔️
-							danger
-							onClick={cancelEdit}
-							disabled={isLoading}
-						/>
-					</Space>
-				) : (
-					<Button
-						icon={<EditOutlined />}
-						onClick={() => startEdit(record)}
-					/>
+			render: (_id, rec) => {
+				if (!rec.vehicleId) return <Tag color="default">Sin asociar</Tag>;
+				const v = vehicles.find(x => x.id === rec.vehicleId);
+				return (
+					<span>
+						<i className={`fas fa-${v?.vehicleType || 'car'}`} style={{ marginRight: 6 }} />
+						{v ? v.name : `ID ${rec.vehicleId}`}
+					</span>
 				);
 			},
 		},
-		
+		{
+			title: 'Acciones',
+			key: 'act',
+			width: '15%',
+			render: (_, rec) => {
+				const editable = isEditing(rec);
+				const busyRow = rowLoading === String(rec.headquarterId);
+				const busyModal = modalBusyId === rec.headquarterId;
+				const hasStock = rec.quantity > 0;
+
+				if (editable) {
+					return (
+						<Space>
+							<Button
+								icon={busyRow ? <Spin size="small" /> : <SaveOutlined />}
+								type="primary"
+								style={{ background: '#26B857', borderColor: '#26B857' }}
+								onClick={() => saveEdit(rec)}
+								disabled={busyRow}
+							/>
+							<Button icon={<CloseOutlined />} danger onClick={cancelEdit} disabled={busyRow} />
+						</Space>
+					);
+				}
+
+				return (
+					<Space>
+						<Button icon={<EditOutlined />} onClick={() => startEdit(rec)} />
+						{hasStock && !rec.vehicleId && (
+							<Button
+								icon={<LinkOutlined />}
+								loading={busyModal}
+								onClick={() => openModal('associate', rec)}
+							/>
+						)}
+						{hasStock && rec.vehicleId && (
+							<Button
+								icon={<DisconnectOutlined />}
+								danger
+								loading={busyModal}
+								onClick={() => openModal('disassociate', rec)}
+							/>
+						)}
+					</Space>
+				);
+			},
+		},
 	];
 
+	const rowKey = (inv: VehiclePartInventoryType) =>
+		`${inv.headquarterId}-${inv.vehicleId ?? 'none'}`;
+
 	return (
-		<div style={{ padding: '16px', backgroundColor: '#fafafa' }}>
-			<Typography.Title
-				level={5}
-				style={{
-					margin: '0 0 12px',
-					color: token.colorPrimary,
-					fontWeight: 600,
-					fontSize: 14,
-				}}
-			>
+		<div style={{ padding: 16, background: '#fafafa' }}>
+			<Typography.Title level={5} style={{ margin: '0 0 12px', color: token.colorPrimary }}>
 				<i className="fas fa-warehouse" style={{ marginRight: 8 }} />
 				Inventario&nbsp;por&nbsp;Sede
 			</Typography.Title>
+
 			<Table
-				components={{
-					body: {
-						cell: (props: any) => <td {...props} />,
-					},
-				}}
 				bordered
-				dataSource={editingData}
-				columns={columns}
-				rowKey="headquarterId"
-				pagination={false}
 				size="small"
-				style={{ backgroundColor: 'white' }}
+				pagination={false}
+				rowKey={rowKey}
+				columns={columns}
+				dataSource={tableData}
+				style={{ background: '#fff' }}
 			/>
+			<Modal
+				open={modalOpen}
+				title={modalMode === 'associate' ? 'Asociar a vehículo' : 'Desasociar de vehículo'}
+				okText={modalMode === 'associate' ? 'Asociar' : 'Desasociar'}
+				onCancel={() => setModalOpen(false)}
+				confirmLoading={modalBusyId !== null}
+				okButtonProps={{
+					disabled: modalMode === 'associate' && currentVeh == null,
+				}}
+				onOk={async () => {
+					if (!currentInv) return;
+
+					const maxQty = currentInv.quantity;
+					if (transferQty <= 0 || transferQty > maxQty) {
+						message.warning(`Cantidad inválida (1-${maxQty})`);
+						return;
+					}
+
+					setModalBusyId(currentInv.headquarterId);
+					try {
+						const fn =
+							modalMode === 'associate' ? onAssociate : onDisassociate;
+						const res = await fn?.(
+							vehiclePart.id,
+							currentInv.headquarterId,
+							modalMode === 'associate' ? currentVeh : currentInv.vehicleId,
+							transferQty
+						);
+						if (res?.success === false) throw new Error(res.error);
+					} catch (err) {
+						message.error(
+							(err as Error).message ||
+							(modalMode === 'associate' ? 'Error al asociar' : 'Error al desasociar')
+						);
+					} finally {
+						setModalBusyId(null);
+						setModalOpen(false);
+					}
+				}}
+			>
+				<Space direction="vertical" style={{ width: '100%' }}>
+					{modalMode === 'associate' && (
+						<Select
+							placeholder="Selecciona vehículo"
+							value={currentVeh ?? undefined}
+							onChange={setCurrentVeh}
+							style={{ width: '100%' }}
+							showSearch
+							optionFilterProp="children"
+						>
+							{filteredVehicles.map(v => (
+								<Select.Option key={v.id} value={v.id}>
+									<i
+										className={`fas fa-${v.vehicleType || 'car'}`}
+										style={{ marginRight: 8 }}
+									/>
+									{v.name}
+								</Select.Option>
+							))}
+						</Select>
+					)}
+
+					<InputNumber
+						min={1}
+						max={currentInv?.quantity ?? 1}
+						value={transferQty}
+						onChange={val => setTransferQty(val ?? 1)}
+						style={{ width: '100%' }}
+						placeholder={`Máx. ${currentInv?.quantity ?? 0}`}
+					/>
+				</Space>
+			</Modal>
 		</div>
 	);
 };

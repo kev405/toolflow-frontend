@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { Table, Button, Dropdown, Modal, Spin, message } from 'antd';
+import { Table, Button, Dropdown, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { MenuProps } from 'antd';
 import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import { VehiclePartFormModal } from '../components/VehiclePartFormModal';
 import { VehiclePartFilters } from '../components/VehiclePartFilters';
@@ -49,9 +48,9 @@ export interface VehiclePartPayload {
   model: string;
   description?: string;
   notes?: string;
-  quantity?: number; // Only for creation
-  vehicleId?: number | null; // When associated with specific vehicle
-  vehicleType?: string; // When it's a generic part (car, motorcycle, truck, etc.)
+  quantity?: number;
+  vehicleId?: number | null;
+  vehicleType?: string;
 }
 
 const emptyVehiclePart: VehiclePartPayload = {
@@ -164,11 +163,16 @@ const deleteVehiclePart = async (id: number) => {
   }
 };
 
-const saveInventoryRow = async (partId: number, updatedRow: VehiclePartInventoryType) => {
+const saveInventoryRow = async (partId: number, vehicleId: number | null, updatedRow: VehiclePartInventoryType) => {
   try {
     const token = localStorage.getItem('authToken');
 
-    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${partId}/headquarters/${updatedRow.headquarterId}/stock`, {
+    let query = '';
+    if (vehicleId){
+      query = `?VehicleAssociatedId=${vehicleId}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${partId}/headquarters/${updatedRow.headquarterId}/stock${query}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -197,6 +201,41 @@ const saveInventoryRow = async (partId: number, updatedRow: VehiclePartInventory
   }
 };
 
+const associatedVehiclePart = async (partId: number, headquarterId: number, vehicleId: number | null, quantity: number, associated: boolean) => {
+  try {
+    const token = localStorage.getItem('authToken');
+
+    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${partId}/headquarters/${headquarterId}/association`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        quantity: quantity,
+        destinationVehicleId: associated ? vehicleId : null,
+        sourceVehicleId: associated ? null : vehicleId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al asociar vehículo');
+    }
+
+    return {
+      success: true,
+      message: 'Vehículo asociado correctamente',
+    };
+  } catch (error) {
+    console.error('Error asociando vehículo:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error de red',
+    };
+  }
+}
+
 const fetchHeadquarters = async () => {
   try {
     const token = localStorage.getItem('authToken');
@@ -222,7 +261,7 @@ const fetchHeadquarters = async () => {
 export const VehiclePartsPage: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [vehicleParts, setVehicleParts] = useState<VehiclePartType[]>([]);  const [tableParams, setTableParams] = useState<TableParams>({
+  const [vehicleParts, setVehicleParts] = useState<VehiclePartType[]>([]); const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
       current: 1,
       pageSize: 10,
@@ -244,7 +283,7 @@ export const VehiclePartsPage: React.FC = () => {
   const [selectedHeadquarter, setSelectedHeadquarter] = useState<number | null>(null);
 
   // States for vehicles list (for filters and form)
-  const [vehicles, setVehicles] = useState<{ id: number; name: string; vehicleType?: string;}[]>([]);
+  const [vehicles, setVehicles] = useState<{ id: number; name: string; vehicleType?: string; headquarterId: number }[]>([]);
   const [headquarters, setHeadquarters] = useState<{ id: number; name: string }[]>([]);
 
   const debouncedFetch = debounce((
@@ -275,12 +314,13 @@ export const VehiclePartsPage: React.FC = () => {
     setLoading(true);
     try {
       const result = await fetchVehicleParts(page, size, sortField, sortOrder, name, brand, model, selectedVehicle, selectedHeadquarter);
-      
-      if (result.success && result.data) {        const formattedData = result.data.map((part: any) => ({
+
+      if (result.success && result.data) {
+        const formattedData = result.data.map((part: any) => ({
           ...part,
           key: part.id.toString(),
         }));
-        
+
         setVehicleParts(formattedData);
         setTableParams(prev => ({
           ...prev,
@@ -316,6 +356,7 @@ export const VehiclePartsPage: React.FC = () => {
           id: vehicle.id,
           name: vehicle.name,
           vehicleType: vehicle.vehicleType || "",
+          headquarterId: vehicle.headquarterId || null,
         })));
       }
     } catch (error) {
@@ -444,9 +485,9 @@ export const VehiclePartsPage: React.FC = () => {
     setVehicleParts(updatedParts);
   };
 
-  const handleSaveInventoryRow = async (partId: number, updatedRow: VehiclePartInventoryType) => {
-    const result = await saveInventoryRow(partId, updatedRow);
-  
+  const handleSaveInventoryRow = async (partId: number, vehicleId: number | null, updatedRow: VehiclePartInventoryType) => {
+    const result = await saveInventoryRow(partId, vehicleId, updatedRow);
+
     if (result.success) {
       message.success('Inventario actualizado correctamente');
       await loadVehicleParts();
@@ -455,14 +496,40 @@ export const VehiclePartsPage: React.FC = () => {
       message.error(`Error al guardar: ${result.error}`);
       return { success: false, error: result.error };
     }
-  };  const columns: ColumnsType<VehiclePartType> = [
+  };
+
+  const handleOnDisassociate = async (partId: number, headquarterId: number, vehicleId: number | null, quantity: number) => {
+    const result = await associatedVehiclePart(partId, headquarterId, vehicleId, quantity, false);
+    if (result.success) {
+      message.success('Vehículo desasociado correctamente');
+      await loadVehicleParts();
+      return { success: true };
+    } else {
+      message.error(`Error al desasociar: ${result.error}`);
+      return { success: false, error: result.error };
+    }
+  };
+
+  const handleOnAssociate = async (partId: number, headquarterId: number, vehicleId: number | null, quantity: number) => {
+    const result = await associatedVehiclePart(partId, headquarterId, vehicleId, quantity, true);
+    if (result.success) {
+      message.success('Vehículo asociado correctamente');
+      await loadVehicleParts();
+      return { success: true };
+    } else {
+      message.error(`Error al asociar: ${result.error}`);
+      return { success: false, error: result.error };
+    }
+  };
+
+  const columns: ColumnsType<VehiclePartType> = [
     {
       title: 'Acciones',
       width: 80,
       key: 'actions',
       render: (_, record) => (
         <Dropdown
-          trigger={['click']}          menu={{
+          trigger={['click']} menu={{
             items: [
               {
                 key: 'edit',
@@ -474,7 +541,7 @@ export const VehiclePartsPage: React.FC = () => {
                 label: 'Eliminar',
                 icon: <DeleteOutlined style={{ color: '#ff4d4f' }} />,
               },
-            ],onClick: ({ key }) => {
+            ], onClick: ({ key }) => {
               if (key === 'edit') handleEdit(record);
               if (key === 'delete') handleDelete(record);
             },
@@ -483,7 +550,7 @@ export const VehiclePartsPage: React.FC = () => {
           <Button type="text">•••</Button>
         </Dropdown>
       ),
-    },    {
+    }, {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
@@ -501,12 +568,12 @@ export const VehiclePartsPage: React.FC = () => {
       dataIndex: 'brand',
       key: 'brand',
       sorter: true,
-    },    {
+    }, {
       title: 'Modelo',
       dataIndex: 'model',
       key: 'model',
       sorter: true,
-    },      {
+    }, {
       title: 'Cantidad Total',
       dataIndex: 'totalQuantity',
       key: 'totalQuantity',
@@ -517,27 +584,23 @@ export const VehiclePartsPage: React.FC = () => {
       },
     },
     {
-      title: 'Vehículo Asociado',
-      dataIndex: 'associatedVehicle',
-      key: 'associatedVehicle',
-      render: (_, record) => {
-        if (!record.inventories || record.inventories.length === 0) return '';
-        
-        // Find the first inventory with a vehicleId
-        const inventoryWithVehicle = record.inventories.find(inv => inv.vehicleId);
-        if (!inventoryWithVehicle) return '';
-        
-        // Find the vehicle info from the vehicles list
-        const vehicle = vehicles.find(v => v.id === inventoryWithVehicle.vehicleId);
-        if (!vehicle) return `Vehículo ID: ${inventoryWithVehicle.vehicleId}`;
-        
-        return <span>
-          <i className={`fas fa-${vehicle?.vehicleType || "car"}`} style={{ marginRight: 8 }} />
-          {vehicle.name}
-        </span>
-      },
-    },
-];
+      title: 'Tipo de Vehículo',
+      dataIndex: 'vehicleType',
+      key: 'vehicleType',
+      sorter: true,
+      render: (type: string) => {
+        const iconClass = type === 'car' ? 'fas fa-car' : 'fas fa-motorcycle';
+        const label = type === 'car' ? 'Automóvil' : 'Motocicleta';
+
+        return (
+          <span>
+            <i className={iconClass} style={{ marginRight: 8 }} />
+            {label}
+          </span>
+        );
+      }
+    }
+  ];
 
   return (
     <div style={{ padding: '24px' }} className="overflow-x-auto">
@@ -580,7 +643,9 @@ export const VehiclePartsPage: React.FC = () => {
               }}
             >
               <EditableInventorySubTable
+                vehiclePart={record}
                 inventories={record.inventories || []}
+                vehicles={vehicles || []}
                 onChange={(updatedInventories) => {
                   setVehicleParts(prev =>
                     prev.map(part =>
@@ -591,8 +656,11 @@ export const VehiclePartsPage: React.FC = () => {
                   );
                 }}
                 onSaveRow={async (updatedRow) => {
-                  return await handleSaveInventoryRow(record.id, updatedRow);
+                  const vehicleId = updatedRow.vehicleId || null;
+                  return await handleSaveInventoryRow(record.id, vehicleId, updatedRow);
                 }}
+                onDisassociate={handleOnDisassociate}
+                onAssociate={handleOnAssociate}
               />
             </div>
           ),

@@ -70,7 +70,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
         ...initialValues,
         transferDate: initialValues?.transferDate ? dayjs(initialValues.transferDate) : dayjs(),
       });
-      
+
       // Si estamos editando y tenemos una sede de origen, cargar los datos disponibles
       if (initialValues?.originHeadquarterId && onHeadquarterChange) {
         setSelectedHeadquarterId(initialValues.originHeadquarterId);
@@ -118,17 +118,17 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
 
   const prev = () => setCurrent(prev => prev - 1);
 
-    const toolSelector = (
+  const toolSelector = (
     fieldName: 'tools' | 'vehicleParts',
     items: ItemOption[],
     label: string
   ) => {
     // Obtener todos los ítems disponibles (incluyendo los que ya están seleccionados)
     // Para herramientas, filtrar las que tienen status false
-    const allItems = fieldName === 'tools' 
+    const allItems = fieldName === 'tools'
       ? items.filter(item => item.status !== false)
       : [...items];
-    
+
     // Si estamos editando, agregar los ítems que ya están en el traslado pero no están disponibles
     if (initialValues && initialValues[fieldName]) {
       initialValues[fieldName]?.forEach((selectedItem: any) => {
@@ -207,7 +207,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                         const availablePart = availableVehicleParts.find(p => Number(p.id) === Number(selectedItemId));
                         isInactive = !availablePart || availablePart.available === 0;
                         if (isInactive) errorMsg = 'La parte seleccionada está inactiva. Por favor, elimínala del traslado para continuar.';
-                      } 
+                      }
                       return (
                         <Row gutter={16} key={key}>
                           <Col span={16}>
@@ -218,7 +218,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                               validateStatus={isInactive ? 'error' : undefined}
                               help={isInactive ? errorMsg : undefined}
                             >
-                              <Select 
+                              <Select
                                 placeholder={`Selecciona ${label.toLowerCase()}`}
                                 showSearch
                                 optionFilterProp="children"
@@ -229,8 +229,8 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                                 {allItems
                                   .filter(item => !selectedIds.includes(item.id) || selectedIds.indexOf(item.id) === name)
                                   .map(item => (
-                                    <Select.Option 
-                                      key={item.id} 
+                                    <Select.Option
+                                      key={item.id}
                                       value={item.id}
                                       disabled={item.status === false}
                                     >
@@ -281,9 +281,9 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                                 }
                               ]}
                             >
-                              <InputNumber 
-                                min={1} 
-                                style={{ width: '100%' }} 
+                              <InputNumber
+                                min={1}
+                                style={{ width: '100%' }}
                                 placeholder="Cantidad"
                               />
                             </Form.Item>
@@ -312,7 +312,7 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
   const vehicleSelector = (items: ItemOption[]) => {
     // Obtener todos los vehículos disponibles (incluyendo los que ya están seleccionados)
     const allVehiclesList = [...items];
-    
+
     // Si estamos editando, agregar los vehículos que ya están en el traslado pero no están disponibles
     if (initialValues && initialValues.vehicles) {
       initialValues.vehicles.forEach((veh: any) => {
@@ -365,8 +365,8 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
               optionFilterProp="children"
             >
               {allVehiclesList.map(vehicle => (
-                <Select.Option 
-                  key={vehicle.id} 
+                <Select.Option
+                  key={vehicle.id}
                   value={vehicle.id}
                   disabled={vehicle.status === false}
                 >
@@ -415,8 +415,10 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
                 name="transferDate"
                 rules={[{ required: true, message: 'Selecciona una fecha' }]}
                 initialValue={dayjs()}
+
               >
-                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" disabledDate={(current) => current && current < dayjs().startOf('day')}
+                />
               </Form.Item>
             </Col>
           </Row>

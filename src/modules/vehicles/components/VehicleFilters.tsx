@@ -1,7 +1,6 @@
 import React from 'react';
 import { Input, Button, Row, Col, Select, Typography } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
-import InputMask from 'react-input-mask';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -81,25 +80,17 @@ export const VehicleFilters: React.FC<VehicleFiltersProps> = ({
         </Col>
 
         <Col xs={24} sm={12} md={6}>
-          <InputMask
-            mask="aaa99*"
-            maskChar={null}
+          <Input
+            placeholder="Placa (máx. 6 caracteres)"
             value={searchPlate}
-            onChange={e => onSearchPlateChange(e.target.value.toUpperCase())}
-          >
-            {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => {
-              const { size, ...restProps } = inputProps;
-              return (
-                <Input
-                  {...restProps}
-                  placeholder="Placa (ABC123 / ABC12D)"
-                  suffix={<SearchOutlined style={{ color: '#999' }} />}
-                  allowClear
-                  maxLength={6}
-                />
-              );
+            onChange={e => {
+              const value = e.target.value.toUpperCase().slice(0, 6);
+              onSearchPlateChange(value);
             }}
-          </InputMask>
+            suffix={<SearchOutlined style={{ color: '#999' }} />}
+            allowClear
+            maxLength={6}
+          />
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Input

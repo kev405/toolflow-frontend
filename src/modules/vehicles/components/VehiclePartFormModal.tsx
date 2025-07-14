@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, message, InputNumber, Checkbox, Row, Col, Button } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 import { VehiclePartPayload } from '../pages/VehiclePartsPage';
@@ -10,7 +11,7 @@ const { Option } = Select;
 interface VehiclePartFormModalProps {
   visible: boolean;
   vehiclePart: VehiclePartPayload | null;
-  vehicles: { id: number; name: string; vehicleType?: string;}[];
+  vehicles: { id: number; name: string; vehicleType?: string; }[];
   onSave: () => void;
   onCancel: () => void;
 }
@@ -53,6 +54,8 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
+      const vehicle = vehicles.find(v => v.id === values.vehicleId);
+
       const payload: VehiclePartPayload = {
         name: values.name,
         brand: values.brand,
@@ -61,7 +64,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
         notes: values.notes || '',
         quantity: values.quantity || 0,
         vehicleId: values.isAssociatedToVehicle ? values.vehicleId : null,
-        vehicleType: values.isAssociatedToVehicle ? null : values.vehicleType,
+        vehicleType: values.isAssociatedToVehicle ? vehicle?.vehicleType : values.vehicleType,
       };
 
       if (vehiclePart?.id) {
@@ -220,20 +223,25 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
               <Input placeholder="Ej: S4015" />
             </Form.Item>
           </Col>
-          {!vehiclePart?.id && (
+          {!vehiclePart?.id ? (
             <Col xs={24} md={12}>
               <Form.Item
                 name="quantity"
-                label="Cantidad Inicial"
+                label="Cantidad Disponible"
                 rules={[
                   { required: true, message: 'Ingrese la cantidad' },
                   { type: 'number', min: 0 },
                 ]}
               >
-                <InputNumber min={0} style={{ width: '100%' }} addonAfter="unidades" />
+                <InputNumber min={0} style={{ width: '100%' }} addonAfter="Unidades" />
               </Form.Item>
             </Col>
-          )}
+          ) : <Col span={24}>
+            <div style={{ marginBottom: 16, color: '#888', display: 'flex', alignItems: 'center' }}>
+              <InfoCircleOutlined style={{ marginRight: 8 }} />
+              <em>Los valores de inventario se gestionan por sede en la tabla expandida.</em>
+            </div>
+          </Col>}
         </Row>
         <Row gutter={16}>
           <Col span={24}>
@@ -255,7 +263,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             </Form.Item>
           </Col>
         </Row>
-        <Row gutter={16}>
+        {!vehiclePart?.id && (<Row gutter={16}>
           <Col span={24}>
             <Form.Item name="isAssociatedToVehicle" valuePropName="checked">
               <Checkbox
@@ -272,8 +280,8 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
               </Checkbox>
             </Form.Item>
           </Col>
-        </Row>
-        {isAssociatedToVehicle && (
+        </Row>)}
+        {!vehiclePart?.id && isAssociatedToVehicle && (
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -297,7 +305,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             </Col>
           </Row>
         )}
-        {!isAssociatedToVehicle && (
+        {(!vehiclePart?.id && !isAssociatedToVehicle) && (
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item

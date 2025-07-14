@@ -102,20 +102,7 @@ export const EditableInventorySubTable: React.FC<EditableInventorySubTableProps>
 			title: 'En Préstamo',
 			dataIndex: 'onLoan',
 			width: '15%',
-			render: (v, r) =>
-				isEditing(r) ? (
-					r.consumable ? (
-						v
-					) : (
-						<InputNumber
-							min={0}
-							value={r.onLoan}
-							onChange={val => handleValueChange(r.id, 'onLoan', val ?? 0)}
-						/>
-					)
-				) : (
-					v
-				),
+			render: (value) => <span>{value}</span>,
 		},
 		{
 			title: 'Averiado',
