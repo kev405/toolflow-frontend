@@ -66,6 +66,10 @@ const TransferFormModal: React.FC<TransferFormModalProps> = ({
 
   useEffect(() => {
     if (open) {
+      // Resetear al primer paso cuando se abre el modal
+      setCurrent(0);
+      setSelectedHeadquarterId(undefined);
+      
       form.setFieldsValue({
         ...initialValues,
         transferDate: initialValues?.transferDate ? dayjs(initialValues.transferDate) : dayjs(),
