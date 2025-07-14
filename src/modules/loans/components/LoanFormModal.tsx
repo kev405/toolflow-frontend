@@ -91,6 +91,11 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
     onClose();
   };
 
+  const handleSubmit = async (values: any) => {
+    onSubmit(values);
+    form.resetFields();
+    onClose();
+  };
 
   return (
     <Modal
@@ -121,7 +126,7 @@ const LoanFormModal: React.FC<LoanFormModalProps> = ({
       centered
       destroyOnClose
     >
-      <Form id="loan-form" form={form} layout="vertical" onFinish={onSubmit}>
+      <Form id="loan-form" form={form} layout="vertical" onFinish={handleSubmit}>
         <Row gutter={16}>
           <Col span={6}>
             <Form.Item
