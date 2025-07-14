@@ -1115,8 +1115,8 @@ const TransfersPages = () => {
       return !tool || tool.status === false || (tool.available ?? 1) === 0;
     }) || false;
     const hasInactivePart = actionTransfer.vehicleParts?.some(p => {
-      const part = allVehicleParts.find(ap => ap.id === p.partId);
-      return !part || part.status === false || (part.available ?? 1) === 0;
+      const part = availableVehicleParts.find(ap => ap.id === p.partId);
+      return !part || part.available === 0;
     }) || false;
     const hasInactiveVehicle = actionTransfer.vehicles?.some(v => {
       const vehicle = allVehicles.find(av => av.id === v.vehicleId);
