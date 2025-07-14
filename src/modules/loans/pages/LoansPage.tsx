@@ -648,9 +648,9 @@ const LoansPage = () => {
       }
       setModalOpen(false);
       setLoan(emptyLoan);
+    } finally {
       await loadTools();
       await loadLoans();
-    } finally {
       setLoading(false);
       setIsCreating(false);
       setIsEditing(false);
