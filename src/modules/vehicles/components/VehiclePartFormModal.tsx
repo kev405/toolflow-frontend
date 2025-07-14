@@ -54,6 +54,8 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
+      const vehicle = vehicles.find(v => v.id === values.vehicleId);
+
       const payload: VehiclePartPayload = {
         name: values.name,
         brand: values.brand,
@@ -62,7 +64,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
         notes: values.notes || '',
         quantity: values.quantity || 0,
         vehicleId: values.isAssociatedToVehicle ? values.vehicleId : null,
-        vehicleType: values.isAssociatedToVehicle ? null : values.vehicleType,
+        vehicleType: values.isAssociatedToVehicle ? vehicle?.vehicleType : values.vehicleType,
       };
 
       if (vehiclePart?.id) {
@@ -261,7 +263,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             </Form.Item>
           </Col>
         </Row>
-        <Row gutter={16}>
+        {!vehiclePart?.id && (<Row gutter={16}>
           <Col span={24}>
             <Form.Item name="isAssociatedToVehicle" valuePropName="checked">
               <Checkbox
@@ -278,8 +280,8 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
               </Checkbox>
             </Form.Item>
           </Col>
-        </Row>
-        {isAssociatedToVehicle && (
+        </Row>)}
+        {!vehiclePart?.id && isAssociatedToVehicle && (
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
@@ -303,7 +305,7 @@ export const VehiclePartFormModal: React.FC<VehiclePartFormModalProps> = ({
             </Col>
           </Row>
         )}
-        {!isAssociatedToVehicle && (
+        {(!vehiclePart?.id && !isAssociatedToVehicle) && (
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
