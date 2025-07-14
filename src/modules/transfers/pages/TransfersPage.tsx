@@ -310,7 +310,6 @@ const fetchTransfers = async (
     }
 
     const query = params.join('&');
-    console.log('Query:', query);
     
     const response = await fetch(`${API_BASE_URL}/api/transfers?${query}`, {
       method: 'GET',
@@ -825,7 +824,6 @@ const TransfersPages = () => {
 
   const loadResponsibles = async () => {
     const result = await fetchResponsibles();
-    console.log(result, 'result responsables');
     if (result.success) {
       setResponsibles(result.data);
     } else {
@@ -876,8 +874,6 @@ const TransfersPages = () => {
         name: tool.toolName
       }));
       setUniqueTools(uniqueToolsList);
-      
-      console.log(transformedTools, 'transformed tools');
     } else {
       message.error(result.error || 'Error al cargar herramientas');
     }
