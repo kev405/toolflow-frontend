@@ -105,7 +105,6 @@ export const EditableInventorySubTable: React.FC<EditableVehiclePartInventorySub
 			setTableData(newData);
 			onChange?.(newData);
 			cancelEdit();
-			message.success('Cantidad actualizada');
 		} catch (err) {
 			message.error((err as Error).message || 'Error al actualizar');
 		} finally {

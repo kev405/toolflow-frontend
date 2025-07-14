@@ -163,11 +163,16 @@ const deleteVehiclePart = async (id: number) => {
   }
 };
 
-const saveInventoryRow = async (partId: number, updatedRow: VehiclePartInventoryType) => {
+const saveInventoryRow = async (partId: number, vehicleId: number | null, updatedRow: VehiclePartInventoryType) => {
   try {
     const token = localStorage.getItem('authToken');
 
-    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${partId}/headquarters/${updatedRow.headquarterId}/stock`, {
+    let query = '';
+    if (vehicleId){
+      query = `?VehicleAssociatedId=${vehicleId}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/vehicle-parts/${partId}/headquarters/${updatedRow.headquarterId}/stock${query}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -480,8 +485,8 @@ export const VehiclePartsPage: React.FC = () => {
     setVehicleParts(updatedParts);
   };
 
-  const handleSaveInventoryRow = async (partId: number, updatedRow: VehiclePartInventoryType) => {
-    const result = await saveInventoryRow(partId, updatedRow);
+  const handleSaveInventoryRow = async (partId: number, vehicleId: number | null, updatedRow: VehiclePartInventoryType) => {
+    const result = await saveInventoryRow(partId, vehicleId, updatedRow);
 
     if (result.success) {
       message.success('Inventario actualizado correctamente');
@@ -651,7 +656,8 @@ export const VehiclePartsPage: React.FC = () => {
                   );
                 }}
                 onSaveRow={async (updatedRow) => {
-                  return await handleSaveInventoryRow(record.id, updatedRow);
+                  const vehicleId = updatedRow.vehicleId || null;
+                  return await handleSaveInventoryRow(record.id, vehicleId, updatedRow);
                 }}
                 onDisassociate={handleOnDisassociate}
                 onAssociate={handleOnAssociate}
